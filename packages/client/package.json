@@ -1,0 +1,11 @@
+{
+  "name": "@sotv/client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@sotv/content": "workspace:*",
+    "@sotv/sim": "workspace:*",
+    "preact": "10.29.8"
+  }
+}

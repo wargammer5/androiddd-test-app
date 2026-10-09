@@ -1,0 +1,37 @@
+{
+  "name": "sotvorenie",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p packages/client --noEmit && tsc -p packages/sim --noEmit && tsc -p packages/content --noEmit",
+    "validate:content": "tsx tools/validate-content.ts",
+    "build:web": "pnpm typecheck && vite build packages/client",
+    "smoke": "playwright test",
+    "build:apk": "node tools/android/build-apk.mjs",
+    "verify:apk": "node tools/android/verify-apk.mjs",
+    "bench": "tsx tools/bench/bench.ts",
+    "credits": "tsx tools/gen-credits.ts",
+    "stage": "node tools/release-stage.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "@preact/preset-vite": "2.10.6",
+    "@types/node": "^22.10.0",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vite": "6.4.4",
+    "vitest": "3.2.7"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "dependencies": {
+    "@sotv/sim": "workspace:*",
+    "@sotv/content": "workspace:*"
+  }
+}

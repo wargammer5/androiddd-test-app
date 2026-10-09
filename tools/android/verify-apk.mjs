@@ -1,0 +1,40 @@
+import { statSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { ROOT, run, version, apkName } from '../lib/common.mjs';
+
+const v = version();
+const apk = process.argv[2] ?? path.join(ROOT, 'out', apkName(v));
+const fail = (m) => {
+  console.error('VERIFY FAILED: ' + m);
+  process.exit(1);
+};
+if (!existsSync(apk)) fail('no apk ' + apk);
+const report = [];
+const sig = run('apksigner', ['verify', '--verbose', '--print-certs', apk], { capture: true });
+if (!/^Verifies/m.test(sig)) fail('apksigner verify');
+const digest = /certificate SHA-256 digest: ([0-9a-f]+)/.exec(sig)?.[1];
+if (!digest) fail('no cert digest');
+const pinFile = path.join(ROOT, 'tools/signing/debug.cert.sha256');
+if (existsSync(pinFile)) {
+  if (readFileSync(pinFile, 'utf8').trim() !== digest) fail('signing key changed: updates would not install over previous builds');
+} else writeFileSync(pinFile, digest + '\n');
+report.push('signature: ' + sig.split('\n').filter((l) => /Verified using|Verifies/.test(l)).join('; '));
+const badging = run('aapt', ['dump', 'badging', apk], { capture: true });
+const pkg = /package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'/.exec(badging);
+const minSdk = /sdkVersion:'(\d+)'/.exec(badging)?.[1];
+const target = /targetSdkVersion:'(\d+)'/.exec(badging)?.[1];
+if (!pkg) fail('badging package');
+if (pkg[1] !== 'ru.sotvorenie.game') fail('package name ' + pkg[1]);
+if (pkg[3] !== `${v.version}-stage${v.stage}`) fail('versionName ' + pkg[3]);
+if (!minSdk) fail('minSdk');
+report.push(`package=${pkg[1]} versionCode=${pkg[2]} versionName=${pkg[3]} minSdk=${minSdk} targetSdk=${target}`);
+const list = run('unzip', ['-l', apk], { capture: true });
+for (const f of ['assets/web/index.html', 'classes.dex', 'AndroidManifest.xml']) if (!list.includes(f)) fail('missing ' + f);
+if (!/assets\/web\/assets\/sim\.worker-[^\s]+\.js/.test(list)) fail('missing worker bundle');
+if (/https?:\/\/(?!appassets\.androidplatform\.net)[a-z0-9.-]+\.[a-z]{2,}\/[^\s"']*\.(js|css|woff2?|ogg|png)/i.test(run('unzip', ['-p', apk, 'assets/web/index.html'], { capture: true }))) fail('index.html references remote assets');
+const size = statSync(apk).size;
+if (size > 150 * 1048576) fail('apk too large');
+report.push(`size=${(size / 1048576).toFixed(2)} MB (budget 150 MB)`);
+report.push('cert sha256=' + digest);
+console.log(report.join('\n'));
+console.log('VERIFY OK');

@@ -1,11 +1,11 @@
+node_modules/
 .gradle/
 build/
-local.properties
+out/
+packages/client/dist/
+test-results/
+playwright-report/
 .idea/
 *.iml
 .DS_Store
-captures/
-.externalNativeBuild/
-.cxx/
-*.apk
-*.aab
+tools/android/.work/
