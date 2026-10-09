@@ -1,0 +1,12 @@
+{
+  "large-world": {
+    "msPerTick": 0.0008502533333334365,
+    "entities": 0,
+    "maxMs": 0.0011850000000208638
+  },
+  "medium-world": {
+    "msPerTick": 0.0006232133333332968,
+    "entities": 0,
+    "maxMs": 0.00719200000003184
+  }
+}
