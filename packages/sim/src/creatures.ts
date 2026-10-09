@@ -754,7 +754,7 @@ export class Creatures implements System {
     return false;
   }
 
-  private moveAlong(i: number, speedMul = 1): boolean {
+  moveAlong(i: number, speedMul = 1): boolean {
     const e = this.e;
     const w = this.sim.world;
     let p = this.paths[i];
@@ -1019,7 +1019,10 @@ export class Creatures implements System {
       const c = this.pf.nearestPassable(px, py, d.swim ? Mover.Swim : d.flies ? Mover.Fly : Mover.Walk, 5);
       if (c === null) continue;
       const i = this.spawn(sp, (c % w.w) + 0.5, Math.floor(c / w.w) + 0.5);
-      if (i >= 0) out.push(i);
+      if (i >= 0) {
+        this.e.home[i] = Math.floor(y) * w.w + Math.floor(x);
+        out.push(i);
+      }
     }
     return out;
   }

@@ -118,6 +118,8 @@ export class Entities {
   born = new Int32Array(ENT_CAP);
   attacker = new Int32Array(ENT_CAP);
   home = new Int32Array(ENT_CAP);
+  phase = new Uint8Array(ENT_CAP);
+  workTimer = new Uint16Array(ENT_CAP);
   private free: number[] = [];
   private top = 0;
   names = new Map<number, string>();
@@ -179,6 +181,8 @@ export class Entities {
     this.repaths[i] = 0;
     this.cooldown[i] = 0;
     this.job[i] = 0;
+    this.phase[i] = 0;
+    this.workTimer[i] = 0;
     this.anim[i] = 0;
     this.traits.fill(255, i * MAX_TRAITS, i * MAX_TRAITS + MAX_TRAITS);
     return i;

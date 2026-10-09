@@ -64,3 +64,40 @@ export const PlantDef = z.object({
   food: z.number().min(0),
 });
 export type PlantDef = z.infer<typeof PlantDef>;
+
+export const Cost = z.record(z.string(), z.number().min(0));
+export const EconomyDef = z.object({
+  resources: z.array(z.string()),
+  foodPerMeal: z.number(),
+  spoilagePerDay: z.number().min(0).max(1),
+  storageSpoilageFactor: z.number().min(0).max(1),
+  winterFuelPerHousePerDay: z.number().min(0),
+  toolWearMax: z.number().int().positive(),
+  toolBonus: z.number().min(1),
+  carryMax: z.number().int().positive(),
+  gather: z.record(z.string(), z.number()),
+  oreAmount: z.record(z.string(), z.number()),
+  smith: z.record(z.string(), Cost),
+  eras: z.array(z.object({ key: z.string(), unitBonus: z.number() })),
+});
+export type EconomyDef = z.infer<typeof EconomyDef>;
+
+export const BuildingDef = z.object({
+  type: z.number().int().min(0),
+  key: z.string(),
+  era: z.number().int().min(0),
+  cost: Cost,
+  work: z.number().min(0),
+  housing: z.number().min(0),
+  storage: z.number().min(0),
+  max: z.number().int().positive(),
+});
+export type BuildingDef = z.infer<typeof BuildingDef>;
+
+export const TechDef = z.object({
+  key: z.string(),
+  era: z.number().int().min(0),
+  cost: Cost,
+  effect: z.record(z.string(), z.number()),
+});
+export type TechDef = z.infer<typeof TechDef>;

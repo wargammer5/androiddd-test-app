@@ -85,37 +85,56 @@ export class Substances implements System {
     const base = w.baseTemp[i]!;
     let heat = w.heat[i]!;
     const f = w.fire[i]!;
-    if (m === Mat.None && f === 0 && w.obj[i] !== Obj.Spring) {
-      if (((x + y + tick) & 1) === 1) return false;
-      if (heat === base) {
-        const r = x + 1 < w.w ? w.heat[i + 1]! : base;
-        const l = x > 0 ? w.heat[i - 1]! : base;
-        const dn = y + 1 < w.h ? w.heat[i + w.w]! : base;
-        const up = y > 0 ? w.heat[i - w.w]! : base;
-        if (Math.abs(r - base) + Math.abs(l - base) + Math.abs(dn - base) + Math.abs(up - base) < 2) return false;
-      }
-    }
-    let sum = 0;
-    let cnt = 0;
-    for (let k = 0; k < 4; k++) {
-      const nx = x + DX[k]!;
-      const ny = y + DY[k]!;
-      if (nx < 0 || ny < 0 || nx >= w.w || ny >= w.h) continue;
-      sum += w.heat[ny * w.w + nx]!;
-      cnt++;
-    }
-    let target = base;
     const lava = m === Mat.Lava && d > 0;
-    if (lava && w.obj[i] === Obj.Vent) target = LAVA_TEMP;
-    if (f > 0) target = Math.max(target, FIRE_TEMP + f * 8);
-    const nh = lava && target === base ? heat + (sum / cnt - heat) * 0.04 + (base - heat) * 0.002 : heat + (sum / cnt - heat) * 0.18 + (target - heat) * (target !== base ? 0.25 : 0.02);
-    if (Math.abs(nh - heat) > 0.05) {
-      w.heat[i] = nh;
-      heat = nh;
-      if (Math.abs(nh - base) > 1.5) changed = true;
-    } else if (heat !== base) {
-      w.heat[i] = Math.abs(heat - base) < 0.3 ? base : base + (heat - base) * 0.9;
+    const source = f > 0 || (lava && w.obj[i] === Obj.Vent);
+    const diff = heat - base;
+    if (source || diff > 0.5 || diff < -0.5) {
+      const k = lava && !source ? 0.03 : 0.09;
+      let t = 0;
+      if (x + 1 < w.w) {
+        const j = i + 1;
+        const tr = (heat - w.heat[j]!) * k;
+        if (tr > 0.05 || tr < -0.05) {
+          w.heat[j] = w.heat[j]! + tr;
+          t += tr;
+        }
+      }
+      if (x > 0) {
+        const j = i - 1;
+        const tr = (heat - w.heat[j]!) * k;
+        if (tr > 0.05 || tr < -0.05) {
+          w.heat[j] = w.heat[j]! + tr;
+          t += tr;
+        }
+      }
+      if (y + 1 < w.h) {
+        const j = i + w.w;
+        const tr = (heat - w.heat[j]!) * k;
+        if (tr > 0.05 || tr < -0.05) {
+          w.heat[j] = w.heat[j]! + tr;
+          t += tr;
+        }
+      }
+      if (y > 0) {
+        const j = i - w.w;
+        const tr = (heat - w.heat[j]!) * k;
+        if (tr > 0.05 || tr < -0.05) {
+          w.heat[j] = w.heat[j]! + tr;
+          t += tr;
+        }
+      }
+      heat -= t;
+      let target = base;
+      if (lava && w.obj[i] === Obj.Vent) target = LAVA_TEMP;
+      if (f > 0) target = Math.max(target, FIRE_TEMP + f * 8);
+      if (target !== base) heat += (target - heat) * 0.25;
+      else heat += (base - heat) * (lava ? 0.002 : 0.04);
+      if (!lava && Math.abs(heat - base) < 0.4) heat = base;
+      w.heat[i] = heat;
+      changed = Math.abs(heat - base) > 1.5;
     }
+    if (m === Mat.None && f === 0 && w.obj[i] !== Obj.Spring) return changed;
+    if (m !== Mat.None && m !== Mat.Lava && f === 0 && ((tick + (x >> 5) + (y >> 5)) & 1) === 1 && d > 0) return changed;
 
     if (f > 0) {
       if (this.fire(sim, w, i, x, y, tick, f)) changed = true;

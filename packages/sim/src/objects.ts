@@ -69,6 +69,8 @@ export const enum Obj {
   Wreck = 141,
   Bridge = 142,
   Beacon = 143,
+  Scaffold = 144,
+  Sack = 145,
 }
 
 export const BUILDING_BASE = 80;

@@ -1,20 +1,585 @@
 [
-  { "id": 0, "key": "velen", "kind": "civ", "race": 0, "diet": "omni", "hp": 60, "dmg": 8, "armor": 1, "speed": 1.6, "vision": 10, "size": 0, "lifespan": 70, "maturity": 16, "litter": 1, "fertility": 0.5, "biomes": ["plains", "forest", "savanna", "beach"], "colors": { "skin": "#e0b08a", "hair": "#6b4a2a", "cloth": "#ff00ff" }, "traitPool": ["diligent", "curious", "fertile", "brave", "greedy"], "swim": false },
-  { "id": 1, "key": "drok", "kind": "civ", "race": 1, "diet": "omni", "hp": 85, "dmg": 10, "armor": 3, "speed": 1.3, "vision": 8, "size": 0, "lifespan": 110, "maturity": 22, "litter": 1, "fertility": 0.35, "biomes": ["mountain", "snow", "plains"], "colors": { "skin": "#c89070", "hair": "#a05a28", "cloth": "#ff00ff" }, "traitPool": ["strong", "tough", "diligent", "greedy", "stubborn"], "swim": false },
-  { "id": 2, "key": "sylv", "kind": "civ", "race": 2, "diet": "herb", "hp": 50, "dmg": 7, "armor": 0, "speed": 1.9, "vision": 13, "size": 0, "lifespan": 220, "maturity": 30, "litter": 1, "fertility": 0.25, "biomes": ["forest", "jungle", "magic"], "colors": { "skin": "#f2dcc0", "hair": "#e8e0a0", "cloth": "#ff00ff" }, "traitPool": ["keen", "wise", "peaceful", "swift", "longlived"], "swim": false },
-  { "id": 3, "key": "skarn", "kind": "civ", "race": 3, "diet": "carn", "hp": 70, "dmg": 11, "armor": 2, "speed": 1.7, "vision": 9, "size": 0, "lifespan": 55, "maturity": 12, "litter": 2, "fertility": 0.55, "biomes": ["desert", "swamp", "savanna", "jungle"], "colors": { "skin": "#6f9a4a", "hair": "#3e5e2a", "cloth": "#ff00ff" }, "traitPool": ["aggressive", "tough", "fertile", "swift", "brave"], "swim": true },
-  { "id": 4, "key": "rabbit", "kind": "animal", "race": -1, "diet": "herb", "hp": 10, "dmg": 1, "armor": 0, "speed": 2.4, "vision": 7, "size": 0, "lifespan": 8, "maturity": 1, "litter": 3, "fertility": 0.7, "biomes": ["plains", "forest", "savanna", "snow"], "colors": { "skin": "#d8cfc4", "hair": "#a0968a", "cloth": "#ffffff" }, "traitPool": ["swift", "fertile", "coward"], "swim": false },
-  { "id": 5, "key": "deer", "kind": "animal", "race": -1, "diet": "herb", "hp": 30, "dmg": 4, "armor": 0, "speed": 2.2, "vision": 11, "size": 0, "lifespan": 18, "maturity": 2, "litter": 1, "fertility": 0.5, "biomes": ["forest", "plains", "jungle"], "colors": { "skin": "#a8743e", "hair": "#e8dcc8", "cloth": "#ffffff" }, "traitPool": ["swift", "keen", "coward"], "swim": false },
-  { "id": 6, "key": "sheep", "kind": "animal", "race": -1, "diet": "herb", "hp": 25, "dmg": 2, "armor": 1, "speed": 1.4, "vision": 6, "size": 0, "lifespan": 14, "maturity": 1, "litter": 1, "fertility": 0.55, "biomes": ["plains", "mountain", "savanna"], "colors": { "skin": "#f2f0ea", "hair": "#2a2624", "cloth": "#ffffff" }, "traitPool": ["peaceful", "fertile"], "swim": false },
-  { "id": 7, "key": "wolf", "kind": "animal", "race": -1, "diet": "carn", "hp": 40, "dmg": 9, "armor": 1, "speed": 2.3, "vision": 12, "size": 0, "lifespan": 15, "maturity": 2, "litter": 2, "fertility": 0.35, "biomes": ["forest", "snow", "plains", "mountain"], "colors": { "skin": "#7c7c84", "hair": "#4a4a50", "cloth": "#ffffff" }, "traitPool": ["aggressive", "keen", "swift"], "swim": false },
-  { "id": 8, "key": "bear", "kind": "animal", "race": -1, "diet": "omni", "hp": 110, "dmg": 16, "armor": 3, "speed": 1.6, "vision": 9, "size": 1, "lifespan": 30, "maturity": 4, "litter": 1, "fertility": 0.25, "biomes": ["forest", "snow", "mountain"], "colors": { "skin": "#6a4428", "hair": "#4a2e18", "cloth": "#ffffff" }, "traitPool": ["strong", "tough", "aggressive"], "swim": true },
-  { "id": 9, "key": "fox", "kind": "animal", "race": -1, "diet": "carn", "hp": 18, "dmg": 5, "armor": 0, "speed": 2.4, "vision": 10, "size": 0, "lifespan": 10, "maturity": 1, "litter": 2, "fertility": 0.45, "biomes": ["forest", "plains", "snow", "savanna"], "colors": { "skin": "#d8762c", "hair": "#f2ece2", "cloth": "#ffffff" }, "traitPool": ["swift", "keen", "greedy"], "swim": false },
-  { "id": 10, "key": "crab", "kind": "animal", "race": -1, "diet": "omni", "hp": 16, "dmg": 4, "armor": 3, "speed": 1.2, "vision": 6, "size": 0, "lifespan": 12, "maturity": 1, "litter": 3, "fertility": 0.5, "biomes": ["beach", "swamp"], "colors": { "skin": "#d8503c", "hair": "#f2a090", "cloth": "#ffffff" }, "traitPool": ["tough", "aggressive"], "swim": true },
-  { "id": 11, "key": "lizard", "kind": "animal", "race": -1, "diet": "carn", "hp": 14, "dmg": 4, "armor": 1, "speed": 2.0, "vision": 8, "size": 0, "lifespan": 9, "maturity": 1, "litter": 3, "fertility": 0.5, "biomes": ["desert", "savanna", "volcanic", "jungle"], "colors": { "skin": "#9aa040", "hair": "#5a6420", "cloth": "#ffffff" }, "traitPool": ["swift", "tough"], "swim": false },
-  { "id": 12, "key": "dragon", "kind": "monster", "race": -1, "diet": "carn", "hp": 900, "dmg": 45, "armor": 10, "speed": 2.8, "vision": 18, "size": 2, "lifespan": 900, "maturity": 50, "litter": 1, "fertility": 0.02, "biomes": ["mountain", "volcanic"], "colors": { "skin": "#b8302a", "hair": "#f2c040", "cloth": "#ffffff" }, "traitPool": ["aggressive", "strong", "tough"], "swim": true, "flies": true },
-  { "id": 13, "key": "demon", "kind": "monster", "race": -1, "diet": "carn", "hp": 260, "dmg": 26, "armor": 6, "speed": 2.0, "vision": 12, "size": 1, "lifespan": 500, "maturity": 1, "litter": 1, "fertility": 0, "biomes": ["volcanic"], "colors": { "skin": "#7a1a2a", "hair": "#ff7a20", "cloth": "#ffffff" }, "traitPool": ["aggressive", "strong"], "swim": false },
-  { "id": 14, "key": "undead", "kind": "monster", "race": -1, "diet": "none", "hp": 45, "dmg": 8, "armor": 1, "speed": 1.2, "vision": 9, "size": 0, "lifespan": 999, "maturity": 0, "litter": 0, "fertility": 0, "biomes": ["swamp", "snow"], "colors": { "skin": "#d8d8c8", "hair": "#58584c", "cloth": "#ffffff" }, "traitPool": ["aggressive"], "swim": false },
-  { "id": 15, "key": "mutant", "kind": "monster", "race": -1, "diet": "omni", "hp": 90, "dmg": 13, "armor": 2, "speed": 1.6, "vision": 9, "size": 0, "lifespan": 40, "maturity": 3, "litter": 2, "fertility": 0.3, "biomes": ["acid"], "colors": { "skin": "#8ad040", "hair": "#c050d0", "cloth": "#ffffff" }, "traitPool": ["aggressive", "tough", "fertile"], "swim": true },
-  { "id": 16, "key": "alien", "kind": "monster", "race": -1, "diet": "carn", "hp": 120, "dmg": 18, "armor": 4, "speed": 2.2, "vision": 14, "size": 0, "lifespan": 300, "maturity": 1, "litter": 0, "fertility": 0, "biomes": [], "colors": { "skin": "#60d8c0", "hair": "#2a3a60", "cloth": "#ffffff" }, "traitPool": ["keen", "wise"], "swim": false },
-  { "id": 17, "key": "titancrab", "kind": "monster", "race": -1, "diet": "none", "hp": 2500, "dmg": 80, "armor": 20, "speed": 3.0, "vision": 14, "size": 3, "lifespan": 9999, "maturity": 0, "litter": 0, "fertility": 0, "biomes": [], "colors": { "skin": "#e0603c", "hair": "#fff0d0", "cloth": "#ffffff" }, "traitPool": [], "swim": true }
+  {
+    "id": 0,
+    "key": "velen",
+    "kind": "civ",
+    "race": 0,
+    "diet": "omni",
+    "hp": 60,
+    "dmg": 8,
+    "armor": 1,
+    "speed": 1.6,
+    "vision": 10,
+    "size": 0,
+    "lifespan": 55,
+    "maturity": 8,
+    "litter": 1,
+    "fertility": 0.5,
+    "biomes": [
+      "plains",
+      "forest",
+      "savanna",
+      "beach"
+    ],
+    "colors": {
+      "skin": "#e0b08a",
+      "hair": "#6b4a2a",
+      "cloth": "#ff00ff"
+    },
+    "traitPool": [
+      "diligent",
+      "curious",
+      "fertile",
+      "brave",
+      "greedy"
+    ],
+    "swim": false
+  },
+  {
+    "id": 1,
+    "key": "drok",
+    "kind": "civ",
+    "race": 1,
+    "diet": "omni",
+    "hp": 85,
+    "dmg": 10,
+    "armor": 3,
+    "speed": 1.3,
+    "vision": 8,
+    "size": 0,
+    "lifespan": 80,
+    "maturity": 10,
+    "litter": 1,
+    "fertility": 0.35,
+    "biomes": [
+      "mountain",
+      "snow",
+      "plains"
+    ],
+    "colors": {
+      "skin": "#c89070",
+      "hair": "#a05a28",
+      "cloth": "#ff00ff"
+    },
+    "traitPool": [
+      "strong",
+      "tough",
+      "diligent",
+      "greedy",
+      "stubborn"
+    ],
+    "swim": false
+  },
+  {
+    "id": 2,
+    "key": "sylv",
+    "kind": "civ",
+    "race": 2,
+    "diet": "herb",
+    "hp": 50,
+    "dmg": 7,
+    "armor": 0,
+    "speed": 1.9,
+    "vision": 13,
+    "size": 0,
+    "lifespan": 150,
+    "maturity": 14,
+    "litter": 1,
+    "fertility": 0.25,
+    "biomes": [
+      "forest",
+      "jungle",
+      "magic"
+    ],
+    "colors": {
+      "skin": "#f2dcc0",
+      "hair": "#e8e0a0",
+      "cloth": "#ff00ff"
+    },
+    "traitPool": [
+      "keen",
+      "wise",
+      "peaceful",
+      "swift",
+      "longlived"
+    ],
+    "swim": false
+  },
+  {
+    "id": 3,
+    "key": "skarn",
+    "kind": "civ",
+    "race": 3,
+    "diet": "carn",
+    "hp": 70,
+    "dmg": 11,
+    "armor": 2,
+    "speed": 1.7,
+    "vision": 9,
+    "size": 0,
+    "lifespan": 45,
+    "maturity": 6,
+    "litter": 2,
+    "fertility": 0.55,
+    "biomes": [
+      "desert",
+      "swamp",
+      "savanna",
+      "jungle"
+    ],
+    "colors": {
+      "skin": "#6f9a4a",
+      "hair": "#3e5e2a",
+      "cloth": "#ff00ff"
+    },
+    "traitPool": [
+      "aggressive",
+      "tough",
+      "fertile",
+      "swift",
+      "brave"
+    ],
+    "swim": true
+  },
+  {
+    "id": 4,
+    "key": "rabbit",
+    "kind": "animal",
+    "race": -1,
+    "diet": "herb",
+    "hp": 10,
+    "dmg": 1,
+    "armor": 0,
+    "speed": 2.4,
+    "vision": 7,
+    "size": 0,
+    "lifespan": 8,
+    "maturity": 1,
+    "litter": 3,
+    "fertility": 0.7,
+    "biomes": [
+      "plains",
+      "forest",
+      "savanna",
+      "snow"
+    ],
+    "colors": {
+      "skin": "#d8cfc4",
+      "hair": "#a0968a",
+      "cloth": "#ffffff"
+    },
+    "traitPool": [
+      "swift",
+      "fertile",
+      "coward"
+    ],
+    "swim": false
+  },
+  {
+    "id": 5,
+    "key": "deer",
+    "kind": "animal",
+    "race": -1,
+    "diet": "herb",
+    "hp": 30,
+    "dmg": 4,
+    "armor": 0,
+    "speed": 2.2,
+    "vision": 11,
+    "size": 0,
+    "lifespan": 18,
+    "maturity": 2,
+    "litter": 1,
+    "fertility": 0.5,
+    "biomes": [
+      "forest",
+      "plains",
+      "jungle"
+    ],
+    "colors": {
+      "skin": "#a8743e",
+      "hair": "#e8dcc8",
+      "cloth": "#ffffff"
+    },
+    "traitPool": [
+      "swift",
+      "keen",
+      "coward"
+    ],
+    "swim": false
+  },
+  {
+    "id": 6,
+    "key": "sheep",
+    "kind": "animal",
+    "race": -1,
+    "diet": "herb",
+    "hp": 25,
+    "dmg": 2,
+    "armor": 1,
+    "speed": 1.4,
+    "vision": 6,
+    "size": 0,
+    "lifespan": 14,
+    "maturity": 1,
+    "litter": 1,
+    "fertility": 0.55,
+    "biomes": [
+      "plains",
+      "mountain",
+      "savanna"
+    ],
+    "colors": {
+      "skin": "#f2f0ea",
+      "hair": "#2a2624",
+      "cloth": "#ffffff"
+    },
+    "traitPool": [
+      "peaceful",
+      "fertile"
+    ],
+    "swim": false
+  },
+  {
+    "id": 7,
+    "key": "wolf",
+    "kind": "animal",
+    "race": -1,
+    "diet": "carn",
+    "hp": 40,
+    "dmg": 9,
+    "armor": 1,
+    "speed": 2.3,
+    "vision": 12,
+    "size": 0,
+    "lifespan": 15,
+    "maturity": 2,
+    "litter": 2,
+    "fertility": 0.35,
+    "biomes": [
+      "forest",
+      "snow",
+      "plains",
+      "mountain"
+    ],
+    "colors": {
+      "skin": "#7c7c84",
+      "hair": "#4a4a50",
+      "cloth": "#ffffff"
+    },
+    "traitPool": [
+      "aggressive",
+      "keen",
+      "swift"
+    ],
+    "swim": false
+  },
+  {
+    "id": 8,
+    "key": "bear",
+    "kind": "animal",
+    "race": -1,
+    "diet": "omni",
+    "hp": 110,
+    "dmg": 16,
+    "armor": 3,
+    "speed": 1.6,
+    "vision": 9,
+    "size": 1,
+    "lifespan": 30,
+    "maturity": 4,
+    "litter": 1,
+    "fertility": 0.25,
+    "biomes": [
+      "forest",
+      "snow",
+      "mountain"
+    ],
+    "colors": {
+      "skin": "#6a4428",
+      "hair": "#4a2e18",
+      "cloth": "#ffffff"
+    },
+    "traitPool": [
+      "strong",
+      "tough",
+      "aggressive"
+    ],
+    "swim": true
+  },
+  {
+    "id": 9,
+    "key": "fox",
+    "kind": "animal",
+    "race": -1,
+    "diet": "carn",
+    "hp": 18,
+    "dmg": 5,
+    "armor": 0,
+    "speed": 2.4,
+    "vision": 10,
+    "size": 0,
+    "lifespan": 10,
+    "maturity": 1,
+    "litter": 2,
+    "fertility": 0.45,
+    "biomes": [
+      "forest",
+      "plains",
+      "snow",
+      "savanna"
+    ],
+    "colors": {
+      "skin": "#d8762c",
+      "hair": "#f2ece2",
+      "cloth": "#ffffff"
+    },
+    "traitPool": [
+      "swift",
+      "keen",
+      "greedy"
+    ],
+    "swim": false
+  },
+  {
+    "id": 10,
+    "key": "crab",
+    "kind": "animal",
+    "race": -1,
+    "diet": "omni",
+    "hp": 16,
+    "dmg": 4,
+    "armor": 3,
+    "speed": 1.2,
+    "vision": 6,
+    "size": 0,
+    "lifespan": 12,
+    "maturity": 1,
+    "litter": 3,
+    "fertility": 0.5,
+    "biomes": [
+      "beach",
+      "swamp"
+    ],
+    "colors": {
+      "skin": "#d8503c",
+      "hair": "#f2a090",
+      "cloth": "#ffffff"
+    },
+    "traitPool": [
+      "tough",
+      "aggressive"
+    ],
+    "swim": true
+  },
+  {
+    "id": 11,
+    "key": "lizard",
+    "kind": "animal",
+    "race": -1,
+    "diet": "carn",
+    "hp": 14,
+    "dmg": 4,
+    "armor": 1,
+    "speed": 2.0,
+    "vision": 8,
+    "size": 0,
+    "lifespan": 9,
+    "maturity": 1,
+    "litter": 3,
+    "fertility": 0.5,
+    "biomes": [
+      "desert",
+      "savanna",
+      "volcanic",
+      "jungle"
+    ],
+    "colors": {
+      "skin": "#9aa040",
+      "hair": "#5a6420",
+      "cloth": "#ffffff"
+    },
+    "traitPool": [
+      "swift",
+      "tough"
+    ],
+    "swim": false
+  },
+  {
+    "id": 12,
+    "key": "dragon",
+    "kind": "monster",
+    "race": -1,
+    "diet": "carn",
+    "hp": 900,
+    "dmg": 45,
+    "armor": 10,
+    "speed": 2.8,
+    "vision": 18,
+    "size": 2,
+    "lifespan": 900,
+    "maturity": 50,
+    "litter": 1,
+    "fertility": 0.02,
+    "biomes": [
+      "mountain",
+      "volcanic"
+    ],
+    "colors": {
+      "skin": "#b8302a",
+      "hair": "#f2c040",
+      "cloth": "#ffffff"
+    },
+    "traitPool": [
+      "aggressive",
+      "strong",
+      "tough"
+    ],
+    "swim": true,
+    "flies": true
+  },
+  {
+    "id": 13,
+    "key": "demon",
+    "kind": "monster",
+    "race": -1,
+    "diet": "carn",
+    "hp": 260,
+    "dmg": 26,
+    "armor": 6,
+    "speed": 2.0,
+    "vision": 12,
+    "size": 1,
+    "lifespan": 500,
+    "maturity": 1,
+    "litter": 1,
+    "fertility": 0,
+    "biomes": [
+      "volcanic"
+    ],
+    "colors": {
+      "skin": "#7a1a2a",
+      "hair": "#ff7a20",
+      "cloth": "#ffffff"
+    },
+    "traitPool": [
+      "aggressive",
+      "strong"
+    ],
+    "swim": false
+  },
+  {
+    "id": 14,
+    "key": "undead",
+    "kind": "monster",
+    "race": -1,
+    "diet": "none",
+    "hp": 45,
+    "dmg": 8,
+    "armor": 1,
+    "speed": 1.2,
+    "vision": 9,
+    "size": 0,
+    "lifespan": 999,
+    "maturity": 0,
+    "litter": 0,
+    "fertility": 0,
+    "biomes": [
+      "swamp",
+      "snow"
+    ],
+    "colors": {
+      "skin": "#d8d8c8",
+      "hair": "#58584c",
+      "cloth": "#ffffff"
+    },
+    "traitPool": [
+      "aggressive"
+    ],
+    "swim": false
+  },
+  {
+    "id": 15,
+    "key": "mutant",
+    "kind": "monster",
+    "race": -1,
+    "diet": "omni",
+    "hp": 90,
+    "dmg": 13,
+    "armor": 2,
+    "speed": 1.6,
+    "vision": 9,
+    "size": 0,
+    "lifespan": 40,
+    "maturity": 3,
+    "litter": 2,
+    "fertility": 0.3,
+    "biomes": [
+      "acid"
+    ],
+    "colors": {
+      "skin": "#8ad040",
+      "hair": "#c050d0",
+      "cloth": "#ffffff"
+    },
+    "traitPool": [
+      "aggressive",
+      "tough",
+      "fertile"
+    ],
+    "swim": true
+  },
+  {
+    "id": 16,
+    "key": "alien",
+    "kind": "monster",
+    "race": -1,
+    "diet": "carn",
+    "hp": 120,
+    "dmg": 18,
+    "armor": 4,
+    "speed": 2.2,
+    "vision": 14,
+    "size": 0,
+    "lifespan": 300,
+    "maturity": 1,
+    "litter": 0,
+    "fertility": 0,
+    "biomes": [],
+    "colors": {
+      "skin": "#60d8c0",
+      "hair": "#2a3a60",
+      "cloth": "#ffffff"
+    },
+    "traitPool": [
+      "keen",
+      "wise"
+    ],
+    "swim": false
+  },
+  {
+    "id": 17,
+    "key": "titancrab",
+    "kind": "monster",
+    "race": -1,
+    "diet": "none",
+    "hp": 2500,
+    "dmg": 80,
+    "armor": 20,
+    "speed": 3.0,
+    "vision": 14,
+    "size": 3,
+    "lifespan": 9999,
+    "maturity": 0,
+    "litter": 0,
+    "fertility": 0,
+    "biomes": [],
+    "colors": {
+      "skin": "#e0603c",
+      "hair": "#fff0d0",
+      "cloth": "#ffffff"
+    },
+    "traitPool": [],
+    "swim": true
+  }
 ]

@@ -479,3 +479,19 @@ button.power {
   border-radius: 10px;
   padding: 2px 8px;
 }
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.side-panel h4 {
+  margin: 8px 0 4px;
+  font-size: 13px;
+  color: var(--accent);
+}
+a.link {
+  color: var(--accent-2);
+  cursor: pointer;
+  text-decoration: underline;
+}

@@ -10,6 +10,11 @@ import { SaveReader, SaveWriter, migrate, SAVE_VERSION } from './save.ts';
 import { Substances } from './substances.ts';
 import { Creatures } from './creatures.ts';
 import { Nature, placePlants } from './nature.ts';
+import { CitySystem, type City } from './cities.ts';
+import { KingdomSystem } from './kingdoms.ts';
+import { buildings as BUILDINGS, economy as ECONOMY } from '@sotv/content';
+const ECON_RES = ECONOMY.resources;
+import { isBuilding, buildingType } from './objects.ts';
 import { calendar } from './time.ts';
 import { isPlant, plantType, plantStage, plantObj, PlantType, Stage } from './objects.ts';
 import { EFlag } from './entities.ts';
@@ -43,6 +48,8 @@ export class Simulation {
   substances!: Substances;
   creatures!: Creatures;
   nature!: Nature;
+  cities!: CitySystem;
+  kingdomSys!: KingdomSystem;
   startPeoples = true;
 
   constructor(params: NewWorldParams, skipGen = false) {
@@ -90,7 +97,40 @@ export class Simulation {
     this.substances = new Substances();
     this.creatures = new Creatures(this);
     this.nature = new Nature(this);
-    this.systems.push(this.substances, this.nature, this.creatures);
+    this.cities = new CitySystem(this);
+    this.kingdomSys = this.makeKingdoms();
+    this.creatures.civ = this.cities;
+    this.systems.push(this.substances, this.nature, this.cities, this.kingdomSys, this.creatures);
+  }
+
+  protected makeKingdoms(): KingdomSystem {
+    return new KingdomSystem(this);
+  }
+
+  onCityFounded(c: City): void {
+    this.kingdomSys.create(c);
+  }
+
+  onCityRuined(c: City): void {
+    const k = this.kingdomSys.get(c.kingdom);
+    if (!k) return;
+    k.cities = k.cities.filter((x) => x !== c.id);
+    if (k.capital === c.id) k.capital = k.cities[0] ?? -1;
+    if (k.cities.length === 0) this.kingdomSys.fall(k);
+  }
+
+  onPrayer(_c: City, _i: number): void {}
+
+  civWorkTarget(_c: City, _i: number): number {
+    return -1;
+  }
+
+  civDoWork(_c: City, _i: number, _timer: number): boolean {
+    return false;
+  }
+
+  civHostile(_a: number, _b: number): boolean {
+    return false;
   }
 
   onUnitDeath(_i: number, _cell: number): void {}
@@ -218,6 +258,7 @@ export class Simulation {
   }
 
   paletteLut(): Uint8Array {
+    this.kingdomSys.writeLut(this.lut);
     return this.lut;
   }
 
@@ -288,6 +329,8 @@ export class Simulation {
     const cal = calendar(this.tick);
     let pop = 0;
     for (const d of SPECIES) if (d.kind === 'civ') pop += this.creatures.speciesCount[d.id]!;
+    const cities = this.cities.cities.filter((c) => c.alive).length;
+    const kingdoms = this.kingdomSys.kingdoms.filter((k) => k.alive).length;
     return {
       tick: this.tick,
       day: cal.day,
@@ -296,8 +339,8 @@ export class Simulation {
       dayPhase: cal.dayPhase,
       population: pop,
       creatures: this.creatures.e.count,
-      cities: 0,
-      kingdoms: 0,
+      cities,
+      kingdoms,
       tickMs,
       worldAge: 'calm',
       weather: this.weatherNear(),
@@ -329,6 +372,10 @@ export class Simulation {
         const i = this.creatures.e.index(q.id);
         return i >= 0 ? this.unitCard(i) : null;
       }
+      case 'city':
+        return this.cities.cityInfo(q.id);
+      case 'kingdom':
+        return this.kingdomSys.info(q.id);
       case 'species': {
         return SPECIES.map((d) => ({ key: d.key, kind: d.kind, count: this.creatures.speciesCount[d.id]! }));
       }
@@ -342,14 +389,36 @@ export class Simulation {
   }
 
   unitCard(i: number): unknown {
-    return this.creatures.card(i);
+    const card = this.creatures.card(i);
+    const e = this.creatures.e;
+    const extra: Record<string, string | number> = {};
+    const c = this.cities.city(e.city[i]!);
+    if (c) extra['unit.city'] = c.name;
+    if (e.job[i]) extra['unit.job'] = 'job.' + e.job[i];
+    if (e.carryAmt[i]) extra['unit.carry'] = `${e.carryAmt[i]} × ${ECON_RES[e.carry[i]!]}`;
+    this.cardExtra(i, extra);
+    card.extra = extra;
+    return card;
   }
+
+  protected cardExtra(_i: number, _extra: Record<string, string | number>): void {}
 
   cellInfo(x: number, y: number): unknown {
     const w = this.world;
     if (!w.inside(x, y)) return null;
     const i = w.idx(x, y);
+    const o = w.obj[i]!;
+    const z = w.zone[i]!;
+    const city = z ? this.cities.city(z - 1) : null;
+    const kingdom = city ? this.kingdomSys.get(city.kingdom) : null;
+    let objName: string | undefined;
+    if (isPlant(o)) objName = 'plant.' + ['oak', 'pine', 'palm', 'jungletree', 'cactus', 'berry', 'flower', 'mushroom', 'crystal'][plantType(o)];
+    else if (isBuilding(o)) objName = 'bld.' + BUILDINGS[buildingType(o)]!.key;
+    else if (o) objName = 'obj.' + o;
     return {
+      objName,
+      city: city ? { id: city.id, name: city.name } : undefined,
+      kingdom: kingdom ? { id: kingdom.id, name: kingdom.name } : undefined,
       x,
       y,
       biome: w.biome[i],
@@ -448,6 +517,6 @@ export class Simulation {
   }
 
   protected extraHash(): number {
-    return this.creatures.hash();
+    return (this.creatures.hash() ^ this.cities.hash()) >>> 0;
   }
 }

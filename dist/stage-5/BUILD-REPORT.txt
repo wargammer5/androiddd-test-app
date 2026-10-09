@@ -1,0 +1,10 @@
+Sotvorenie v0.5.0 stage 5
+APK Sotvorenie-v0.5.0-stage5.apk 0.14 MB
+tests: ok
+content: ok
+bench: ok
+web build: ok
+smoke: ok
+apk: ok
+verify: ok
+bench: { "large-world": { "msPerTick": 2.0656846699999973, "entities": 1277, "maxMs": 8.226951000000554 }, "medium-world": { "msPerTick": 0.9931921633333332, "entities": 608, "maxMs": 3.6055169999999634 }, "large-substances": { "msPerTick": 2.647367180000001, "entities": 1380, "maxMs": 7.321595999994315 }, "large-3000": { "msPerTick": 3.278429343333337, "entities": 2601, "maxMs": 11.066588000001502 } } 

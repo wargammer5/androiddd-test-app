@@ -16,3 +16,18 @@ export function personName(seed: number, race: number): string {
   if (race === 3 && r.chance(0.3)) out += '-' + r.pick(s);
   return out.charAt(0).toUpperCase() + out.slice(1);
 }
+
+const SUFFIX: string[][] = [
+  ['ford', 'ton', 'vale', 'mir', 'grad', 'holm', 'stead'],
+  ['heim', 'dun', 'gard', 'hold', 'berg', 'kar', 'rok'],
+  ['wyn', 'londe', 'thil', 'aen', 'riel', 'dell', 'sae'],
+  ['ssk', 'zar', 'khet', 'thor', 'ksis', 'mog', 'ruk'],
+];
+
+export function placeName(seed: number, race: number): string {
+  const r = new Rng(seed ^ 0x51ed);
+  const s = SYL[Math.max(0, race) % SYL.length]!;
+  let out = r.pick(s) + (r.chance(0.6) ? r.pick(s) : '');
+  out += r.pick(SUFFIX[Math.max(0, race) % SUFFIX.length]!);
+  return out.charAt(0).toUpperCase() + out.slice(1);
+}

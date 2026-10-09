@@ -1,0 +1,19 @@
+{
+  "resources": ["food", "wood", "stone", "iron", "gold", "gems", "tools", "weapons", "herbs", "knowledge"],
+  "foodPerMeal": 1,
+  "spoilagePerDay": 0.03,
+  "storageSpoilageFactor": 0.5,
+  "winterFuelPerHousePerDay": 1,
+  "toolWearMax": 60,
+  "toolBonus": 1.5,
+  "carryMax": 6,
+  "gather": { "berry": 3, "fruit": 4, "wood": 5, "stone": 3, "iron": 2, "gold": 1, "gems": 1, "hunt": 6, "harvest": 6, "herbs": 2 },
+  "oreAmount": { "stone": 40, "iron": 25, "gold": 12, "gems": 8 },
+  "smith": { "tools": { "iron": 1, "wood": 1 }, "weapons": { "iron": 2, "wood": 1 } },
+  "eras": [
+    { "key": "stone", "unitBonus": 1.0 },
+    { "key": "bronze", "unitBonus": 1.12 },
+    { "key": "iron", "unitBonus": 1.25 },
+    { "key": "gunpowder", "unitBonus": 1.45 }
+  ]
+}

@@ -15,6 +15,9 @@ export function Hud({ session }: { session: GameSession; onOpen: (p: string) => 
       </span>
       <span title={t(WEATHER[s.weather] ?? 'weather.clear')}>{['☀', '🌧', '🌨', '⛈'][s.weather] ?? '☀'}</span>
       <span title={t('hud.population')}>👥 {s.population}</span>
+      <span class="muted small" data-testid="hud-cities">
+        🏰 {s.cities}
+      </span>
       <span class="muted small">🐾 {s.creatures}</span>
       <span class="muted small">{fps} fps</span>
     </div>

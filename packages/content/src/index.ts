@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { BiomeDef, Strings, SpeciesDef, TraitDef, PlantDef } from './schemas.ts';
+import { BiomeDef, Strings, SpeciesDef, TraitDef, PlantDef, EconomyDef, BuildingDef, TechDef } from './schemas.ts';
+import economyJson from '../data/economy.json';
+import buildingsJson from '../data/buildings.json';
+import techsJson from '../data/techs.json';
 import plantsJson from '../data/plants.json';
 import speciesJson from '../data/species.json';
 import traitsJson from '../data/traits.json';
@@ -19,6 +22,9 @@ export const biomes = parse('biomes', z.array(BiomeDef), biomesJson);
 export const species = parse('species', z.array(SpeciesDef), speciesJson);
 export const traits = parse('traits', z.array(TraitDef), traitsJson);
 export const plants = parse('plants', z.array(PlantDef), plantsJson);
+export const economy = parse('economy', EconomyDef, economyJson);
+export const buildings = parse('buildings', z.array(BuildingDef), buildingsJson);
+export const techs = parse('techs', z.array(TechDef), techsJson);
 export const strings = {
   ru: parse('i18n/ru', Strings, ruJson),
   en: parse('i18n/en', Strings, enJson),
@@ -48,6 +54,26 @@ export function validateAll(): string[] {
     for (const b of [...p.biomes, ...Object.keys(p.density)]) if (!biomeKeys.has(b)) errors.push(`plant ${p.key} unknown biome ${b}`);
     if (!strings.ru[`plant.${p.key}`]) errors.push(`ru missing plant.${p.key}`);
   });
+  const res = new Set(economy.resources);
+  const checkCost = (where: string, c: Record<string, number>) => {
+    for (const k of Object.keys(c)) if (!res.has(k)) errors.push(`${where}: unknown resource ${k}`);
+  };
+  buildings.forEach((b, i) => {
+    if (b.type !== i) errors.push(`building ${b.key} type != index`);
+    checkCost('building ' + b.key, b.cost);
+    if (!strings.ru[`bld.${b.key}`]) errors.push(`ru missing bld.${b.key}`);
+  });
+  for (const t of techs) {
+    checkCost('tech ' + t.key, t.cost);
+    if (t.era >= economy.eras.length) errors.push(`tech ${t.key} bad era`);
+    if (!strings.ru[`tech.${t.key}`]) errors.push(`ru missing tech.${t.key}`);
+  }
+  for (const r of economy.resources) if (!strings.ru[`res.${r}`]) errors.push(`ru missing res.${r}`);
+  for (const e of economy.eras) if (!strings.ru[`era.${e.key}`]) errors.push(`ru missing era.${e.key}`);
+  for (const [k, c] of Object.entries(economy.smith)) {
+    if (!res.has(k)) errors.push(`smith product ${k}`);
+    checkCost('smith ' + k, c);
+  }
   for (const t of traits) {
     if (t.opposite && !traitKeys.has(t.opposite)) errors.push(`trait ${t.key} unknown opposite ${t.opposite}`);
     if (!strings.ru[`trait.${t.key}`]) errors.push(`ru missing trait.${t.key}`);

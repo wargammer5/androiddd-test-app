@@ -437,3 +437,42 @@ definePower({
     sim.nature.lightning(sim, c.x, c.y);
   },
 });
+
+definePower({
+  id: 'city_flag',
+  tab: 'civ',
+  icon: '🚩',
+  brush: false,
+  apply(sim, c) {
+    const last = lastSpawn.get(c.stroke);
+    if (last) return;
+    lastSpawn.set(c.stroke, [c.x, c.y]);
+    const w = sim.world;
+    const x = Math.floor(c.x);
+    const y = Math.floor(c.y);
+    if (!w.inside(x, y)) return;
+    const cr = sim.creatures;
+    const e = cr.e;
+    let best = -1;
+    let bd = 30 * 30;
+    cr.grid.rebuild(e);
+    cr.grid.query(c.x, c.y, 30, (j) => {
+      if (!e.alive[j] || e.city[j] !== -1) return;
+      if (cr.def(j).kind !== 'civ') return;
+      const d = (e.x[j]! - c.x) ** 2 + (e.y[j]! - c.y) ** 2;
+      if (d < bd) {
+        bd = d;
+        best = j;
+      }
+    });
+    if (best < 0) return;
+    const race = e.species[best]!;
+    const members: number[] = [];
+    cr.grid.query(c.x, c.y, 30, (j) => {
+      if (e.alive[j] && e.city[j] === -1 && e.species[j] === race) members.push(j);
+    });
+    const i = y * w.w + x;
+    const site = w.zone[i] === 0 && w.mat[i] === Mat.None ? i : sim.cities.findCitySite(c.x, c.y, race, 6);
+    if (site >= 0) sim.cities.newCity(race, site, members);
+  },
+});

@@ -1,0 +1,138 @@
+[
+  {
+    "key": "agriculture",
+    "era": 0,
+    "cost": {
+      "knowledge": 10,
+      "wood": 5
+    },
+    "effect": {
+      "farmYield": 1.3
+    }
+  },
+  {
+    "key": "masonry",
+    "era": 0,
+    "cost": {
+      "knowledge": 14,
+      "stone": 10
+    },
+    "effect": {
+      "buildSpeed": 1.2
+    }
+  },
+  {
+    "key": "toolmaking",
+    "era": 0,
+    "cost": {
+      "knowledge": 16,
+      "wood": 10
+    },
+    "effect": {
+      "gatherSpeed": 1.2
+    }
+  },
+  {
+    "key": "bronze",
+    "era": 1,
+    "cost": {
+      "knowledge": 30,
+      "iron": 6
+    },
+    "effect": {
+      "dmg": 1.1
+    }
+  },
+  {
+    "key": "writing",
+    "era": 1,
+    "cost": {
+      "knowledge": 34,
+      "wood": 10
+    },
+    "effect": {
+      "research": 1.3
+    }
+  },
+  {
+    "key": "sailing",
+    "era": 1,
+    "cost": {
+      "knowledge": 30,
+      "wood": 20
+    },
+    "effect": {
+      "boats": 1
+    }
+  },
+  {
+    "key": "ironworking",
+    "era": 2,
+    "cost": {
+      "knowledge": 60,
+      "iron": 15
+    },
+    "effect": {
+      "dmg": 1.15,
+      "armor": 1.2
+    }
+  },
+  {
+    "key": "architecture",
+    "era": 2,
+    "cost": {
+      "knowledge": 55,
+      "stone": 30
+    },
+    "effect": {
+      "buildSpeed": 1.3,
+      "housing": 1.25
+    }
+  },
+  {
+    "key": "medicine",
+    "era": 2,
+    "cost": {
+      "knowledge": 50,
+      "herbs": 10
+    },
+    "effect": {
+      "heal": 1.5
+    }
+  },
+  {
+    "key": "gunpowder",
+    "era": 3,
+    "cost": {
+      "knowledge": 100,
+      "iron": 25,
+      "gold": 5
+    },
+    "effect": {
+      "dmg": 1.3
+    }
+  },
+  {
+    "key": "banking",
+    "era": 3,
+    "cost": {
+      "knowledge": 90,
+      "gold": 15
+    },
+    "effect": {
+      "tax": 1.5
+    }
+  },
+  {
+    "key": "engineering",
+    "era": 3,
+    "cost": {
+      "knowledge": 95,
+      "stone": 40,
+      "iron": 10
+    },
+    "effect": {
+      "buildSpeed": 1.4
+    }
+  }
+]
