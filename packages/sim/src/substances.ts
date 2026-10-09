@@ -12,7 +12,8 @@ const MAX_ACTIVE_PER_TICK = 400;
 
 export function fuelOf(w: World, i: number): number {
   const o = w.obj[i]!;
-  if (w.mat[i] === Mat.Water || w.mat[i] === Mat.Ice || w.mat[i] === Mat.Snow) return 0;
+  const mm = w.mat[i]!;
+  if (mm === Mat.Water || mm === Mat.Ice || mm === Mat.Snow || ((mm === Mat.Lava || mm === Mat.Acid) && w.depth[i]! > 0)) return 0;
   if (isPlant(o)) {
     if (isTree(o)) return plantStage(o) >= 3 ? 9 : 5;
     return plantStage(o) >= 2 ? 3 : 1;
@@ -133,6 +134,10 @@ export class Substances implements System {
       return changed;
     }
 
+    if (w.still[i]) {
+      if (m !== Mat.Water && m !== Mat.Ice) w.still[i] = 0;
+      else return changed;
+    }
     switch (m) {
       case Mat.Water: {
         if (heat > 100 || (heat > 38 && d === 1 && (hash2(i, tick, 11) & 255) < 3)) {
@@ -281,6 +286,7 @@ export class Substances implements System {
       w.mat[best] = m;
       w.depth[best] = 0;
     }
+    if (w.still[best]) this.unstill(w, best);
     if (w.depth[best]! + amt > 255) amt = 255 - w.depth[best]!;
     w.depth[best] = w.depth[best]! + amt;
     w.depth[i] = d - amt;
@@ -291,7 +297,25 @@ export class Substances implements System {
     return true;
   }
 
+  unstill(w: World, i: number): void {
+    const x0 = i % w.w;
+    const y0 = (i - x0) / w.w;
+    for (let dy = -3; dy <= 3; dy++)
+      for (let dx = -3; dx <= 3; dx++) {
+        const x = x0 + dx;
+        const y = y0 + dy;
+        if (!w.inside(x, y)) continue;
+        const j = y * w.w + x;
+        if (w.still[j]) {
+          w.still[j] = 0;
+          w.wake(j, 24);
+        }
+      }
+  }
+
   private react(_sim: Simulation, w: World, i: number, j: number, m: number, nm: number): boolean {
+    if (w.still[i]) this.unstill(w, i);
+    if (w.still[j]) this.unstill(w, j);
     const pair = (a: number, b: number) => (m === a && nm === b) || (m === b && nm === a);
     if (pair(Mat.Water, Mat.Lava)) {
       const lava = m === Mat.Lava ? i : j;
@@ -339,8 +363,8 @@ export class Substances implements System {
       w.fire[i] = f > 2 ? f - 2 : 0;
       return true;
     }
-    if (sim.weatherRain(i) && (h & 7) === 0) {
-      w.fire[i] = f - 1;
+    if (sim.weatherRain(i)) {
+      if ((h & 1) === 0) w.fire[i] = f > 2 ? f - 2 : 0;
       return true;
     }
     const maxF = Math.min(15, fuel * 2 + 2);

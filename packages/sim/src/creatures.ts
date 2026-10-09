@@ -282,7 +282,7 @@ export class Creatures implements System {
     const sim = this.sim;
     if (sim.laws.aging && d.lifespan < 5000) {
       e.age[i] = e.age[i]! + 12 / TICKS_PER_YEAR;
-      if (e.age[i]! > e.lifespan[i]! && this.rng.chance(0.02)) {
+      if (e.age[i]! > e.lifespan[i]! && this.rng.chance(0.02 + (e.age[i]! - e.lifespan[i]!) * 0.4)) {
         this.die(i, -1, 'age');
         return;
       }
@@ -578,6 +578,7 @@ export class Creatures implements System {
     if (bestTask === task && target === e.taskTarget[i] && e.taskTimer[i]! > 0) return;
     if ((bestTask === Task.Wander || bestTask === Task.Explore || bestTask === Task.Migrate) && (task === Task.Wander || task === Task.Explore || task === Task.Migrate) && e.taskTimer[i]! > 0 && (this.paths[i] || this.waypoints[i])) return;
     if (bestTask === task && (task === Task.Hunt || task === Task.Fight || task === Task.Flee) && e.taskTimer[i]! > 0 && e.index(e.taskTarget[i]!) >= 0) return;
+    if (bestTask === Task.Eat && task === Task.Eat && e.taskTimer[i]! > 0 && e.taskTarget[i]! >= 0 && isPlant(sim.world.obj[e.taskTarget[i]!]!)) return;
     switch (bestTask) {
       case Task.Sleep:
         this.setTask(i, Task.Sleep, 24);
@@ -894,7 +895,9 @@ export class Creatures implements System {
           e.taskTimer[i] = 0;
           return;
         }
-        if (!this.paths[i] || e.tx[i] !== tx || e.ty[i] !== ty) this.goTo(i, tgt);
+        if (!this.paths[i] || e.tx[i] !== tx || e.ty[i] !== ty) {
+          if (!this.straight(i, tgt)) this.goTo(i, tgt);
+        }
         if (!this.moveAlong(i)) e.taskTimer[i] = 0;
         this.checkStuck(i);
         return;
@@ -1118,25 +1121,25 @@ export class Creatures implements System {
 
   save(w: SaveWriter): void {
     this.e.save(w);
-    const paths: [number, number[], number, number[] | null, number][] = [];
+    const paths: [number, number[] | null, number, number[] | null, number][] = [];
     for (let i = 0; i < this.e.high; i++) {
       if (!this.e.alive[i]) continue;
       const p = this.paths[i];
       const wp = this.waypoints[i];
       if (!p && !wp) continue;
-      paths.push([i, p ? Array.from(p) : [], this.pathPos[i]!, wp, this.wpPos[i]!]);
+      paths.push([i, p ? Array.from(p) : null, this.pathPos[i]!, wp, this.wpPos[i]!]);
     }
     w.json('C.meta', { follow: this.followId, rng: Array.from(this.rng.getState()), paths });
   }
 
   load(r: SaveReader): void {
     this.e.load(r);
-    const m = r.jsonOr<{ follow: number; rng: number[]; paths?: [number, number[], number, number[] | null, number][] } | null>('C.meta', null);
+    const m = r.jsonOr<{ follow: number; rng: number[]; paths?: [number, number[] | null, number, number[] | null, number][] } | null>('C.meta', null);
     if (m) {
       this.followId = m.follow;
       this.rng.setState(m.rng);
       for (const [i, p, pp, wp, wpp] of m.paths ?? []) {
-        this.paths[i] = p.length ? Int32Array.from(p) : null;
+        this.paths[i] = p ? Int32Array.from(p) : null;
         this.pathPos[i] = pp;
         this.waypoints[i] = wp;
         this.wpPos[i] = wpp;

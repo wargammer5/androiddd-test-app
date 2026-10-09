@@ -79,6 +79,9 @@ export interface FrameStats {
   tickMs: number;
   worldAge: string;
   weather: number;
+  clouds: number[];
+  flash: number;
+  wind: [number, number];
 }
 
 export const ENT_STRIDE = 4;

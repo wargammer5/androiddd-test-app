@@ -18,6 +18,7 @@ function flatSim(): Simulation {
       w.fire[i] = 0;
     }
   w.active.fill(0);
+  s.laws.ecosystem = 'off';
   return s;
 }
 

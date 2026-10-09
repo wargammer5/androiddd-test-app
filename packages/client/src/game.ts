@@ -282,6 +282,8 @@ export class GameSession {
       alpha,
       brush,
       seasonTint: s ? seasonTint(s.season) : 0,
+      cloudList: s?.clouds ?? [],
+      flash: s?.flash ?? 0,
     });
   }
 

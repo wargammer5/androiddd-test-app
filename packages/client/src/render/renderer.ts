@@ -25,6 +25,9 @@ uniform int uQuality;
 uniform float uCloud;
 uniform vec4 uBrush;
 uniform float uSeasonTint;
+uniform vec4 uClouds[8];
+uniform int uCloudN;
+uniform float uFlash;
 out vec4 outColor;
 
 const float TILE = ${TILE.toFixed(1)};
@@ -169,6 +172,28 @@ void main(){
     col *= 1.0 - smoothstep(0.25, 0.5, cl) * 0.25 * uCloud;
   }
 
+  for (int k = 0; k < 8; k++) {
+    if (k >= uCloudN) break;
+    vec4 cl = uClouds[k];
+    vec2 d = wp - cl.xy;
+    float dist = length(d) / cl.z;
+    float edge = noise(wp * 0.15 + float(k) * 13.0) * 0.35;
+    if (dist < 1.0 + edge) {
+      float inside = smoothstep(1.0 + edge, 0.6, dist);
+      col *= 1.0 - inside * (cl.w > 2.5 ? 0.42 : 0.25);
+      if (cl.w < 1.5 || cl.w > 2.5) {
+        vec2 rp = vec2(wp.x * 3.0 + wp.y * 0.6, wp.y * 0.7 - uTime * 9.0);
+        float streak = step(0.93, fract(sin(dot(floor(rp), vec2(12.9898, 78.233))) * 43758.5453));
+        col = mix(col, vec3(0.75, 0.82, 0.95), streak * inside * 0.55);
+      } else {
+        vec2 sp2 = vec2(wp.x * 2.0 + sin(uTime + wp.y) * 0.3, wp.y * 2.0 - uTime * 2.0);
+        float flake = step(0.95, fract(sin(dot(floor(sp2), vec2(39.3468, 11.135))) * 24634.6345));
+        col = mix(col, vec3(1.0), flake * inside * 0.8);
+      }
+    }
+  }
+  if (uFlash > 0.0) col = mix(col, vec3(1.0, 1.0, 0.95), uFlash * 0.12);
+
   if (uBrush.z > 0.0) {
     vec2 d = wp - uBrush.xy;
     float r = uBrush.z;
@@ -259,6 +284,8 @@ export interface RenderParams {
   alpha: number;
   brush: [number, number, number, number];
   seasonTint: number;
+  cloudList: number[];
+  flash: number;
 }
 
 export class Renderer {
@@ -412,6 +439,10 @@ export class Renderer {
     gl.uniform1f(u.uCloud!, p.clouds);
     gl.uniform4f(u.uBrush!, ...p.brush);
     gl.uniform1f(u.uSeasonTint!, p.seasonTint);
+    const n = Math.min(8, Math.floor(p.cloudList.length / 4));
+    if (n > 0) gl.uniform4fv(u.uClouds!, new Float32Array(p.cloudList.slice(0, n * 4)));
+    gl.uniform1i(u.uCloudN!, n);
+    gl.uniform1f(u.uFlash!, p.flash);
     gl.bindVertexArray(this.quad);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 

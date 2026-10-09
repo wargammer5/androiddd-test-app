@@ -1,0 +1,11 @@
+[
+  { "type": 0, "key": "oak", "biomes": ["forest", "plains", "magic"], "density": { "forest": 0.32, "plains": 0.04, "magic": 0.1 }, "tempMin": -5, "tempMax": 32, "moistMin": 0.3, "growth": 1, "spread": 0.12, "life": 14, "wood": 6, "food": 2 },
+  { "type": 1, "key": "pine", "biomes": ["snow", "mountain", "forest"], "density": { "snow": 0.06, "mountain": 0.05, "forest": 0.08 }, "tempMin": -30, "tempMax": 22, "moistMin": 0.2, "growth": 0.8, "spread": 0.1, "life": 15, "wood": 6, "food": 0 },
+  { "type": 2, "key": "palm", "biomes": ["beach", "savanna", "desert"], "density": { "beach": 0.05, "savanna": 0.04, "desert": 0.01 }, "tempMin": 15, "tempMax": 50, "moistMin": 0.1, "growth": 0.9, "spread": 0.08, "life": 12, "wood": 4, "food": 3 },
+  { "type": 3, "key": "jungletree", "biomes": ["jungle", "swamp"], "density": { "jungle": 0.4, "swamp": 0.08 }, "tempMin": 14, "tempMax": 45, "moistMin": 0.45, "growth": 1.3, "spread": 0.15, "life": 13, "wood": 7, "food": 2 },
+  { "type": 4, "key": "cactus", "biomes": ["desert", "savanna", "volcanic"], "density": { "desert": 0.03, "savanna": 0.01, "volcanic": 0.01 }, "tempMin": 10, "tempMax": 60, "moistMin": 0, "growth": 0.6, "spread": 0.05, "life": 15, "wood": 1, "food": 2 },
+  { "type": 5, "key": "berry", "biomes": ["plains", "forest", "savanna", "jungle"], "density": { "plains": 0.03, "forest": 0.04, "savanna": 0.02, "jungle": 0.03 }, "tempMin": 0, "tempMax": 38, "moistMin": 0.2, "growth": 1.4, "spread": 0.1, "life": 9, "wood": 0, "food": 5 },
+  { "type": 6, "key": "flower", "biomes": ["plains", "savanna", "magic", "forest"], "density": { "plains": 0.08, "savanna": 0.04, "magic": 0.15, "forest": 0.02 }, "tempMin": 2, "tempMax": 36, "moistMin": 0.15, "growth": 1.8, "spread": 0.2, "life": 6, "wood": 0, "food": 2 },
+  { "type": 7, "key": "mushroom", "biomes": ["swamp", "forest", "jungle"], "density": { "swamp": 0.1, "forest": 0.02, "jungle": 0.02 }, "tempMin": -2, "tempMax": 34, "moistMin": 0.5, "growth": 1.5, "spread": 0.15, "life": 7, "wood": 0, "food": 3 },
+  { "type": 8, "key": "crystal", "biomes": ["magic", "snow"], "density": { "magic": 0.08, "snow": 0.005 }, "tempMin": -40, "tempMax": 40, "moistMin": 0, "growth": 0.5, "spread": 0.05, "life": 15, "wood": 0, "food": 1 }
+]

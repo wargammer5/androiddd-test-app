@@ -104,6 +104,7 @@ export function generateWorld(world: World, rng: Rng, p: GenParams = DEFAULT_GEN
     if (world.mat[i] === Mat.Water && world.baseTemp[i]! < -12 && world.depth[i]! < 25) world.mat[i] = Mat.Ice;
   }
   placeResources(world, rng);
+  for (let i = 0; i < n; i++) if ((world.mat[i] === Mat.Water || world.mat[i] === Mat.Ice) && world.depth[i]! > 0) world.still[i] = 1;
   world.markAllDirty();
 }
 

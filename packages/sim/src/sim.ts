@@ -9,6 +9,7 @@ import { DEFAULT_LAWS, LAW_PROFILES, sanitizeLaws, type Laws } from './laws.ts';
 import { SaveReader, SaveWriter, migrate, SAVE_VERSION } from './save.ts';
 import { Substances } from './substances.ts';
 import { Creatures } from './creatures.ts';
+import { Nature, placePlants } from './nature.ts';
 import { calendar } from './time.ts';
 import { isPlant, plantType, plantStage, plantObj, PlantType, Stage } from './objects.ts';
 import { EFlag } from './entities.ts';
@@ -41,6 +42,7 @@ export class Simulation {
   lut: Uint8Array = baseLut();
   substances!: Substances;
   creatures!: Creatures;
+  nature!: Nature;
   startPeoples = true;
 
   constructor(params: NewWorldParams, skipGen = false) {
@@ -59,6 +61,7 @@ export class Simulation {
   }
 
   protected populate(): void {
+    placePlants(this.world, this.rng.fork(3));
     this.creatures.spawnInitial();
     if (this.startPeoples) this.spawnPeoples();
   }
@@ -86,7 +89,8 @@ export class Simulation {
   protected installSystems(): void {
     this.substances = new Substances();
     this.creatures = new Creatures(this);
-    this.systems.push(this.substances, this.creatures);
+    this.nature = new Nature(this);
+    this.systems.push(this.substances, this.nature, this.creatures);
   }
 
   onUnitDeath(_i: number, _cell: number): void {}
@@ -103,7 +107,7 @@ export class Simulation {
     if (st === Stage.Fruiting) w.obj[cell] = plantObj(t, Stage.Adult);
     else if (t === PlantType.Flower || t === PlantType.Berry) w.obj[cell] = st > Stage.Sprout ? plantObj(t, Stage.Sprout) : 0;
     w.objData[cell] = 0;
-    w.touch(cell);
+    w.touchVisual(cell);
   }
 
   unitColor(i: number): number {
@@ -111,8 +115,8 @@ export class Simulation {
     return k >= 0 ? k + 1 : 0;
   }
 
-  weatherRain(_i: number): boolean {
-    return false;
+  weatherRain(i: number): boolean {
+    return this.nature.rainAt(this.world, i);
   }
 
   enqueue(cmd: Command): void {
@@ -296,8 +300,19 @@ export class Simulation {
       kingdoms: 0,
       tickMs,
       worldAge: 'calm',
-      weather: 0,
+      weather: this.weatherNear(),
+      clouds: this.nature.clouds.flatMap((c) => [Math.round(c.x * 10) / 10, Math.round(c.y * 10) / 10, Math.round(c.r), c.type]),
+      flash: this.nature.flash,
+      wind: this.nature.wind,
     };
+  }
+
+  weatherNear(): number {
+    const v = this.view;
+    const cx = (v.x0 + v.x1) / 2;
+    const cy = (v.y0 + v.y1) / 2;
+    for (const c of this.nature.clouds) if ((c.x - cx) ** 2 + (c.y - cy) ** 2 < (c.r + 10) ** 2) return c.type;
+    return 0;
   }
 
   query(q: Query): unknown {
@@ -365,6 +380,7 @@ export class Simulation {
     sw.array('L.zone', w.zone);
     sw.array('L.fire', w.fire);
     sw.array('L.road', w.road);
+    sw.array('L.still', w.still);
     sw.array('L.active', w.active);
     for (const s of this.systems) s.save?.(sw);
     this.saveExtra(sw);
@@ -398,6 +414,7 @@ export class Simulation {
     r.into('L.zone', w.zone);
     r.into('L.fire', w.fire);
     r.into('L.road', w.road);
+    r.into('L.still', w.still);
     r.into('L.active', w.active);
     this.tick = meta.tick;
     this.rng.setState(meta.rng);

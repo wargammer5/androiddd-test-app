@@ -1,0 +1,10 @@
+Sotvorenie v0.4.0 stage 4
+APK Sotvorenie-v0.4.0-stage4.apk 0.13 MB
+tests: ok
+content: ok
+bench: ok
+web build: ok
+smoke: ok
+apk: ok
+verify: ok
+bench: { "large-world": { "msPerTick": 2.8464571633333375, "entities": 1381, "maxMs": 9.475864000000001 }, "medium-world": { "msPerTick": 1.4114091699999942, "entities": 714, "maxMs": 4.26043199999549 }, "large-substances": { "msPerTick": 4.559668750000006, "entities": 1389, "maxMs": 8.88826600000175 }, "large-3000": { "msPerTick": 3.3569095033333483, "entities": 2578, "maxMs": 10.302639000001363 } } 

@@ -44,6 +44,12 @@ export function reclassify(sim: Simulation, i: number): void {
 function terrain(sim: Simulation, c: PowerCmd, fn: (i: number, f: number) => void): void {
   const w = sim.world;
   sim.undo.begin(c.stroke, c.power);
+  forBrush(w, c.x, c.y, c.radius + 2, c.shape, (i) => {
+    if (w.still[i]) {
+      w.still[i] = 0;
+      w.wake(i);
+    }
+  });
   forBrush(w, c.x, c.y, c.radius, c.shape, (i, _x, _y, f) => {
     sim.undo.record(w, i);
     fn(i, f);
@@ -362,3 +368,72 @@ for (const d of SPECIES_DATA) {
   if (d.kind === 'civ') defineSpawn(d.key, 'civ', SPAWN_ICONS[d.key] ?? '👤');
   else if (d.kind === 'animal') defineSpawn(d.key, 'creatures', SPAWN_ICONS[d.key] ?? '🐾');
 }
+
+import { plants as PLANT_DATA } from '@sotv/content';
+import { plantObj as mkPlant, Stage as PStage, isPlant as isPlantObj } from './objects.ts';
+
+function plantFor(sim: Simulation, i: number, trees: boolean): number {
+  const w = sim.world;
+  const b = BIOME_KEYS[w.biome[i]!]!;
+  const opts = PLANT_DATA.filter((p) => (p.density[b] ?? 0) > 0 && (!trees || p.wood > 0));
+  if (!opts.length) return trees ? 0 : 6;
+  return opts[(i * 2654435761 >>> 0) % opts.length]!.type;
+}
+
+definePower({
+  id: 'seeds',
+  tab: 'nature',
+  icon: '🌱',
+  brush: true,
+  apply(sim, c) {
+    const w = sim.world;
+    terrain(sim, c, (i) => {
+      if (w.obj[i] !== 0 || w.mat[i] === Mat.Water || w.mat[i] === Mat.Lava || w.biome[i] === Biome.Sea) return;
+      if (((i * 7919) >>> 0) % 3 !== 0) return;
+      w.obj[i] = mkPlant(plantFor(sim, i, false), PStage.Seed);
+      w.objData[i] = 0;
+    });
+  },
+});
+
+definePower({
+  id: 'forest',
+  tab: 'nature',
+  icon: '🌳',
+  brush: true,
+  apply(sim, c) {
+    const w = sim.world;
+    terrain(sim, c, (i) => {
+      if ((w.obj[i] !== 0 && !isPlantObj(w.obj[i]!)) || w.mat[i] === Mat.Water || w.mat[i] === Mat.Lava || w.biome[i] === Biome.Sea) return;
+      if (((i * 2654435761) >>> 0) % 2 !== 0) return;
+      w.obj[i] = mkPlant(plantFor(sim, i, true), PStage.Adult);
+      w.objData[i] = 2;
+    });
+  },
+});
+
+function cloudPower(id: string, icon: string, type: number): void {
+  definePower({
+    id,
+    tab: 'nature',
+    icon,
+    brush: false,
+    apply(sim, c) {
+      if (sim.nature.clouds.some((k) => Math.hypot(k.x - c.x, k.y - c.y) < 6)) return;
+      sim.nature.spawnCloud(c.x, c.y, Math.max(8, c.radius * 2 + 6), type, 900);
+    },
+  });
+}
+cloudPower('rain', '🌧', 1);
+cloudPower('storm', '⛈', 3);
+
+definePower({
+  id: 'lightning',
+  tab: 'destruction',
+  icon: '⚡',
+  brush: false,
+  apply(sim, c) {
+    sim.undo.begin(c.stroke, c.power);
+    sim.nature.lightning(sim, c.x, c.y);
+  },
+});

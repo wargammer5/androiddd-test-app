@@ -4,6 +4,7 @@ test('creatures spawn, render and show a card', async ({ page }) => {
   const errs: string[] = [];
   page.on('pageerror', (e) => errs.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
+  await page.addInitScript(() => localStorage.setItem('sotv.settings', JSON.stringify({ quality: 'high' })));
   await page.goto('/');
   await page.getByTestId('btn-new').click();
   await page.getByTestId('size-small').click();

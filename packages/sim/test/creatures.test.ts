@@ -173,8 +173,9 @@ describe('creatures', () => {
     const e = s.creatures.e;
     const i = s.creatures.spawn(SPECIES_INDEX.get('rabbit')!, 40, 40);
     e.age[i] = e.lifespan[i]! + 0.5;
+    const id = e.id(i);
     for (let t = 0; t < TICKS_PER_YEAR; t++) s.step();
-    expect(e.alive[i]).toBe(0);
+    expect(e.index(id)).toBe(-1);
   });
 
   it('world with creatures is deterministic and survives save/load', () => {

@@ -48,3 +48,19 @@ export const TraitDef = z.object({
   rare: z.boolean().optional(),
 });
 export type TraitDef = z.infer<typeof TraitDef>;
+
+export const PlantDef = z.object({
+  type: z.number().int().min(0),
+  key: z.string(),
+  biomes: z.array(z.string()),
+  density: z.record(z.string(), z.number().min(0).max(1)),
+  tempMin: z.number(),
+  tempMax: z.number(),
+  moistMin: z.number().min(0).max(1),
+  growth: z.number().positive(),
+  spread: z.number().min(0).max(1),
+  life: z.number().int().positive().max(15),
+  wood: z.number().min(0),
+  food: z.number().min(0),
+});
+export type PlantDef = z.infer<typeof PlantDef>;

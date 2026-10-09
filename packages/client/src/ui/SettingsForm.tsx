@@ -1,9 +1,9 @@
 import { t } from '../i18n.ts';
 import { useStore } from '../store.ts';
-import { settings, patchSettings, type Quality } from '../settings.ts';
+import { settings, patchSettings, type Quality, type Settings } from '../settings.ts';
+import { currentSession } from './GameScreen.tsx';
 
-export function SettingsForm({ inGame = false }: { inGame?: boolean }) {
-  void inGame;
+export function SettingsForm(_p: { inGame?: boolean }) {
   const s = useStore(settings);
   return (
     <div>
@@ -29,6 +29,21 @@ export function SettingsForm({ inGame = false }: { inGame?: boolean }) {
         {([30, 60] as const).map((f) => (
           <button key={f} class={s.fpsLimit === f ? 'on' : ''} onClick={() => patchSettings({ fpsLimit: f })}>
             {f}
+          </button>
+        ))}
+      </div>
+      <div class="row">
+        <label>{t('settings.ecosystem')}</label>
+        {(['off', 'slow', 'normal', 'fast'] as Settings['ecosystem'][]).map((k) => (
+          <button
+            key={k}
+            class={s.ecosystem === k ? 'on' : ''}
+            onClick={() => {
+              patchSettings({ ecosystem: k });
+              currentSession?.cmd({ t: 'law', key: 'ecosystem', value: k });
+            }}
+          >
+            {t('eco.' + k)}
           </button>
         ))}
       </div>
