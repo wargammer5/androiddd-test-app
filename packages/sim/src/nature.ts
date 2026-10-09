@@ -302,7 +302,7 @@ export class Nature implements System {
           w.touchVisual(i);
         }
       }
-      if (c.type === Cloud.Storm && r.chance(0.02)) {
+      if (c.type === Cloud.Storm && r.chance(0.006)) {
         const a = r.float() * Math.PI * 2;
         const d = Math.sqrt(r.float()) * c.r;
         this.lightning(sim, c.x + Math.cos(a) * d, c.y + Math.sin(a) * d);

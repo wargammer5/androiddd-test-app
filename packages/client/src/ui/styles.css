@@ -495,3 +495,43 @@ a.link {
   cursor: pointer;
   text-decoration: underline;
 }
+.list-row {
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  min-height: var(--tap);
+}
+.list-row:hover {
+  background: var(--panel-2);
+}
+
+.game {
+  overflow: hidden;
+}
+.hud-top {
+  flex-wrap: wrap;
+}
+@media (max-width: 640px) {
+  .hud-top {
+    gap: 4px;
+  }
+  .hud-top > button {
+    min-width: calc(42px * var(--ui));
+    padding: 0 6px;
+  }
+  .chip {
+    padding: 4px 6px;
+    gap: 5px;
+  }
+  .speed {
+    padding: 2px;
+  }
+  .speed button {
+    min-width: calc(34px * var(--ui));
+    padding: 0 2px;
+  }
+  .minimap {
+    top: calc(118px * var(--ui) + var(--safe-t));
+    width: 28vw;
+  }
+}

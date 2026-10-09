@@ -271,6 +271,7 @@ void main(){
   if (c.r > 0.98 && c.g < 0.02 && c.b > 0.98) c.rgb = kc.rgb;
   if ((vFlags & 1u) != 0u) c.rgb = mix(c.rgb, vec3(1.0, 0.9, 0.2), 0.35);
   if ((vFlags & 2u) != 0u) c.rgb = mix(c.rgb, vec3(1.0, 0.2, 0.2), 0.5);
+  if ((vFlags & 4u) != 0u && vUv.y < 0.2) c.rgb = vec3(1.0, 0.85, 0.2);
   c.rgb *= mix(0.45, 1.0, uDay);
   outColor = vec4(c.rgb, 1.0);
 }`;

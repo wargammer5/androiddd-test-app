@@ -10,6 +10,7 @@ import type { SaveReader, SaveWriter } from './save.ts';
 import { Rng } from './rng.ts';
 
 export const TRAIT_INDEX = new Map(TRAITS.map((t, i) => [t.key, i]));
+export const BOAT_SPRITE = 30;
 const BIOME_KEYS = ['sea', 'plains', 'forest', 'jungle', 'savanna', 'desert', 'mountain', 'snow', 'swamp', 'volcanic', 'acid', 'magic', 'beach'];
 const SPECIES_BIOMES = SPECIES.map((s) => new Set(s.biomes.map((b) => BIOME_KEYS.indexOf(b))));
 export const SPECIES_INDEX = new Map(SPECIES.map((s) => [s.key, s.id]));
@@ -264,7 +265,10 @@ export class Creatures implements System {
       if ((tick + i) % 12 === 0) this.slow(i, d);
       if (!e.alive[i]) continue;
       const ci = Math.floor(e.y[i]!) * w.w + Math.floor(e.x[i]!);
-      if (w.fire[ci]! > 0 && !(d.key === 'demon' || d.key === 'dragon')) this.damage(i, 2 + w.fire[ci]!, -1);
+      if (w.fire[ci]! > 0 && !(d.key === 'demon' || d.key === 'dragon')) {
+        if ((tick + i) % 6 === 0) this.damage(i, 1.5 + w.fire[ci]! * 0.6, -1);
+        if (e.task[i] !== Task.Flee) this.fleeFire(i);
+      }
       if (w.mat[ci] === Mat.Lava && w.depth[ci]! > 0 && !d.flies && d.key !== 'demon') this.damage(i, 25, -1);
       if (w.mat[ci] === Mat.Acid && w.depth[ci]! > 0 && !d.flies) this.damage(i, 3, -1);
       if (!e.alive[i]) continue;
@@ -275,6 +279,30 @@ export class Creatures implements System {
       }
       this.act(i, night);
     }
+  }
+
+  fleeFire(i: number): void {
+    const e = this.e;
+    const w = this.sim.world;
+    const x0 = Math.floor(e.x[i]!);
+    const y0 = Math.floor(e.y[i]!);
+    let fx = 0;
+    let fy = 0;
+    for (let dy = -3; dy <= 3; dy++)
+      for (let dx = -3; dx <= 3; dx++) {
+        if (!w.inside(x0 + dx, y0 + dy)) continue;
+        if (w.fire[(y0 + dy) * w.w + x0 + dx]! > 0) {
+          fx += dx;
+          fy += dy;
+        }
+      }
+    const len = Math.hypot(fx, fy) || 1;
+    const tx = Math.max(0, Math.min(w.w - 1, Math.round(x0 - (fx / len) * 8 + this.rng.range(-2, 2))));
+    const ty = Math.max(0, Math.min(w.h - 1, Math.round(y0 - (fy / len) * 8 + this.rng.range(-2, 2))));
+    const c = this.pf.nearestPassable(tx, ty, this.mover(i), 4);
+    if (c === null) return;
+    this.setTask(i, Task.Flee, 36, -1);
+    if (!this.straight(i, c)) this.goTo(i, c);
   }
 
   private slow(i: number, d: SpeciesDef): void {
@@ -319,9 +347,15 @@ export class Creatures implements System {
     if (e.hp[i]! <= 0) this.die(i, by, by >= 0 ? 'killed' : 'hazard');
   }
 
+  readonly deathStats: Record<string, number> = {};
+
   die(i: number, killer: number, cause: string): void {
     const e = this.e;
     if (!e.alive[i]) return;
+    if (this.def(i).kind === 'civ') {
+      const key = cause === 'hazard' ? this.hazardCause(i) : cause === 'killed' && killer >= 0 ? 'killed:' + this.def(killer).key : cause;
+      this.deathStats[key] = (this.deathStats[key] ?? 0) + 1;
+    }
     const sim = this.sim;
     const d = this.def(i);
     if (killer >= 0 && e.alive[killer]) {
@@ -341,6 +375,19 @@ export class Creatures implements System {
     this.paths[i] = null;
     this.waypoints[i] = null;
     e.kill(i);
+  }
+
+  private hazardCause(i: number): string {
+    const e = this.e;
+    const w = this.sim.world;
+    const c = Math.floor(e.y[i]!) * w.w + Math.floor(e.x[i]!);
+    if (e.hunger[i]! >= 1) return 'starve';
+    if (w.fire[c]! > 0) return 'fire';
+    if (w.mat[c] === Mat.Lava) return 'lava';
+    if (w.mat[c] === Mat.Water) return 'drown';
+    if (w.heat[c]! < -15) return 'cold';
+    if (w.heat[c]! > 60) return 'heat';
+    return 'other';
   }
 
   gainXp(i: number, amount: number): void {
@@ -514,6 +561,7 @@ export class Creatures implements System {
     if (task === Task.Mate && e.taskTimer[i]! > 0) return;
     const hpR = e.hp[i]! / e.maxHp[i]!;
     const vision = e.vision[i]!;
+    if (task === Task.Migrate && e.taskTimer[i]! > 0 && e.taskTarget[i]! >= 0 && e.hunger[i]! < 0.8 && e.energy[i]! > 0.2 && (this.paths[i] || this.waypoints[i]) && this.threatNear(i, 6) < 0) return;
     const mature = e.age[i]! >= d.maturity;
     let bestTask = Task.Wander as Task;
     let bestScore = 0.12 + this.aiMod(i, 'explore') * 0.2 + this.rng.float() * 0.05;
@@ -915,6 +963,10 @@ export class Creatures implements System {
         return;
       }
       case Task.Flee: {
+        if (e.taskTarget[i] === -1) {
+          if (!this.moveAlong(i, 1.3)) e.taskTimer[i] = 0;
+          return;
+        }
         const j = e.index(e.taskTarget[i]!);
         if (j < 0) {
           e.taskTimer[i] = 0;
@@ -1115,7 +1167,9 @@ export class Creatures implements System {
       let flags = 0;
       if (e.flags[i]! & (EFlag.Favorite | EFlag.Hero) || i === follow) flags |= 1;
       if (e.hp[i]! < e.maxHp[i]! * 0.35) flags |= 2;
-      meta[n * 2] = e.species[i]! | (anim << 10) | (e.dir[i]! << 13) | (size << 14) | (flags << 16) | (young ? 1 << 24 : 0);
+      if (e.flags[i]! & EFlag.Ruler) flags |= 4;
+      const boat = (e.flags[i]! & EFlag.Boat) !== 0;
+      meta[n * 2] = (boat ? BOAT_SPRITE : e.species[i]!) | ((boat ? 0 : anim) << 10) | (e.dir[i]! << 13) | ((boat ? 1 : size) << 14) | (flags << 16) | (young && !boat ? 1 << 24 : 0);
       meta[n * 2 + 1] = colorOf(i);
       n++;
     }

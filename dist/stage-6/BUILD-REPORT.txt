@@ -1,0 +1,10 @@
+Sotvorenie v0.6.0 stage 6
+APK Sotvorenie-v0.6.0-stage6.apk 0.15 MB
+tests: ok
+content: ok
+bench: ok
+web build: ok
+smoke: ok
+apk: ok
+verify: ok
+bench: { "large-world": { "msPerTick": 1.7957297700000103, "entities": 1296, "maxMs": 4.989095000000816 }, "medium-world": { "msPerTick": 0.8316073033333304, "entities": 611, "maxMs": 3.044581999998627 }, "large-substances": { "msPerTick": 2.435203776666652, "entities": 1384, "maxMs": 4.645430999997188 }, "large-3000": { "msPerTick": 3.0454299166666656, "entities": 2581, "maxMs": 10.290202999996836 } } 

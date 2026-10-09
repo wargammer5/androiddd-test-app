@@ -15,6 +15,10 @@ import { Hud } from './Hud.tsx';
 import { Confirm } from './Confirm.tsx';
 import { extraPanels } from './panels.ts';
 import { Layers } from './Layers.tsx';
+import { KingdomList } from './KingdomList.tsx';
+import { registerPanel } from './panels.ts';
+
+registerPanel('kingdoms', KingdomList);
 
 export let currentSession: GameSession | null = null;
 
@@ -122,13 +126,16 @@ export function GameScreen({ params, load, exit }: { params?: NewWorldParams; lo
             </div>
             <Hud session={session} onOpen={setPanel} />
             <span class="spacer" />
-            <Layers session={session} available={[0, 4, 5]} />
+            <button onClick={() => setPanel((p) => (p === 'kingdoms' ? null : 'kingdoms'))} data-testid="btn-kingdoms" aria-label="kingdoms">
+              👑
+            </button>
+            <Layers session={session} available={[0, 1, 4, 5]} />
             <button onClick={() => setMini((v) => !v)} aria-label="minimap">
               🗺
             </button>
           </div>
           {mini && <Minimap session={session} />}
-          <Inspector session={session} />
+          {!Panel && <Inspector session={session} />}
           <Toolbar session={session} onConfirm={askConfirm} />
           {Panel && <Panel session={session} onClose={() => setPanel(null)} />}
         </>

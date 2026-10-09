@@ -10,6 +10,7 @@ import { isPlant, isTree, plantStage, plantType, plantObj, Stage, PlantType, Obj
 import { calendar, isNight, Season, TICKS_PER_DAY } from './time.ts';
 import { Mover, passable } from './pathfind.ts';
 import { placeName } from './names.ts';
+import type { Kingdom } from './kingdoms.ts';
 
 export const enum Job {
   None = 0,
@@ -116,7 +117,7 @@ export class CitySystem implements System, CivHooks {
     if (tick % 120 === 60) this.foundCities();
   }
 
-  newCity(race: number, center: number, members: number[]): City | null {
+  newCity(race: number, center: number, members: number[], kingdom?: Kingdom): City | null {
     const w = this.world;
     if (w.zone[center] !== 0) return null;
     const id = this.cities.length;
@@ -167,7 +168,7 @@ export class CitySystem implements System, CivHooks {
       e.home[i] = center;
     }
     this.recount(c);
-    this.sim.onCityFounded(c);
+    this.sim.onCityFounded(c, kingdom);
     this.sim.emit({ kind: 'city', text: 'ev.cityFounded', args: { city: c.name, race: SPECIES[race]!.key }, x: center % w.w, y: Math.floor(center / w.w), important: true });
     return c;
   }
@@ -542,9 +543,10 @@ export class CitySystem implements System, CivHooks {
       if (!e.alive[i] || e.city[i] !== -1 || seen.has(i)) continue;
       const d = SPECIES[e.species[i]!]!;
       if (d.kind !== 'civ' || e.age[i]! < d.maturity) continue;
+      if (this.sim.kingdomSys.expeditions.length && this.sim.kingdomSys.isSettler(e.id(i))) continue;
       const group: number[] = [];
       cr.grid.query(e.x[i]!, e.y[i]!, 10, (j) => {
-        if (e.alive[j] && e.city[j] === -1 && e.species[j] === e.species[i]) group.push(j);
+        if (e.alive[j] && e.city[j] === -1 && e.species[j] === e.species[i] && !(this.sim.kingdomSys.expeditions.length && this.sim.kingdomSys.isSettler(e.id(j)))) group.push(j);
       });
       for (const j of group) seen.add(j);
       if (group.length < 4 || !this.sim.laws.cityGrowth) continue;
@@ -1275,6 +1277,13 @@ export class CitySystem implements System, CivHooks {
       y: Math.floor(c.center / this.world.w),
       culture: c.culture,
       religion: c.religion,
+      kingdomName: this.sim.kingdomSys.get(c.kingdom)?.name ?? '',
+      extra: {
+        'cell.kingdom': this.sim.kingdomSys.get(c.kingdom)?.name ?? '—',
+        'city.loyalty': `${Math.round(c.loyalty * 100)}%`,
+        'city.happiness': `${Math.round(c.happiness * 100)}%`,
+        ...this.sim.cityExtra(c),
+      },
       ledgerErrors: c.store.check(),
       ledger: c.store.debug ? c.store.ledger.slice(-30) : [],
     };

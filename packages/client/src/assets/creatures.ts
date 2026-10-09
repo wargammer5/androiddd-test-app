@@ -81,7 +81,10 @@ function humanoidPal(c: { skin: string; hair: string; cloth: string }, cloth: RG
   };
 }
 
+const BOAT = ['........', '...k....', '...kk...', '...kkk..', '...k....', 'wwwwwwww', '.wwwwww.', '........'];
+
 export function drawCreatures(p: AtlasPainter): void {
+  for (let f = 0; f < 8; f++) p.pattern(CREATURE_TILE_BASE + 30 * 8 + f, f % 2 ? BOAT.map((r, y) => (y >= 5 ? r : r)) : BOAT, { k: K, w: [120, 82, 46] });
   for (const sp of species) {
     const skin = hex(sp.colors.skin);
     const hair = hex(sp.colors.hair);

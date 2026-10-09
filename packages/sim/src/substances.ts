@@ -401,7 +401,7 @@ export class Substances implements System {
         const j = ny * w.w + nx;
         const fj = fuelOf(w, j);
         const dryness = Math.max(0, 1 - w.moist[j]! / 280);
-        if (w.fire[j] === 0 && fj > 0 && ((h >>> 16) & 255) < 255 * dryness * Math.min(1, fj / 10 + 0.12)) {
+        if (w.fire[j] === 0 && fj > 0 && ((h >>> 16) & 255) < 255 * dryness * (fj <= 1 ? 0.035 : Math.min(1, fj / 10 + 0.1))) {
           w.fire[j] = 2;
           w.wake(j, 30);
         }

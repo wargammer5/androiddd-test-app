@@ -11,7 +11,8 @@ import { Substances } from './substances.ts';
 import { Creatures } from './creatures.ts';
 import { Nature, placePlants } from './nature.ts';
 import { CitySystem, type City } from './cities.ts';
-import { KingdomSystem } from './kingdoms.ts';
+import { KingdomSystem, type Kingdom } from './kingdoms.ts';
+import { traits as TRAITS } from '@sotv/content';
 import { buildings as BUILDINGS, economy as ECONOMY } from '@sotv/content';
 const ECON_RES = ECONOMY.resources;
 import { isBuilding, buildingType } from './objects.ts';
@@ -107,15 +108,54 @@ export class Simulation {
     return new KingdomSystem(this);
   }
 
-  onCityFounded(c: City): void {
-    this.kingdomSys.create(c);
+  onCityFounded(c: City, k?: Kingdom): void {
+    if (k && k.alive) this.kingdomSys.assignCity(c, k);
+    else this.kingdomSys.create(c);
+  }
+
+  onKingdomCreated(_k: Kingdom, _from?: Kingdom): void {}
+
+  onKingdomFell(_k: Kingdom): void {}
+
+  onRebellion(_c: City, _from: Kingdom, _to: Kingdom): void {}
+
+  onNewRuler(_k: Kingdom, _unit: number, _succession: boolean): void {}
+
+  findHeir(_k: Kingdom): number {
+    return -1;
+  }
+
+  cityExtra(_c: City): Record<string, string | number> {
+    return {};
+  }
+
+  kingdomExtra(_k: Kingdom): Record<string, string | number> {
+    return {};
+  }
+
+  rulerMod(k: Kingdom, key: string): number {
+    const e = this.creatures.e;
+    const i = e.index(k.ruler);
+    if (i < 0) return 0;
+    let v = 0;
+    for (const t of e.traitList(i)) {
+      const tk = TRAITS[t]!.key;
+      if (key === 'tax' && tk === 'greedy') v += 0.5;
+      if (key === 'tax' && tk === 'generous') v -= 0.3;
+      if (key === 'loyalty' && (tk === 'leader' || tk === 'generous' || tk === 'wise')) v += 0.6;
+      if (key === 'loyalty' && (tk === 'greedy' || tk === 'cursed')) v -= 0.5;
+      if (key === 'war' && (tk === 'aggressive' || tk === 'brave')) v += 0.5;
+      if (key === 'war' && (tk === 'peaceful' || tk === 'coward')) v -= 0.5;
+      if (key === 'faith' && tk === 'pious') v += 0.5;
+    }
+    return v;
   }
 
   onCityRuined(c: City): void {
     const k = this.kingdomSys.get(c.kingdom);
     if (!k) return;
     k.cities = k.cities.filter((x) => x !== c.id);
-    if (k.capital === c.id) k.capital = k.cities[0] ?? -1;
+    if (k.capital === c.id) this.kingdomSys.moveCapital(k);
     if (k.cities.length === 0) this.kingdomSys.fall(k);
   }
 
@@ -376,12 +416,18 @@ export class Simulation {
         return this.cities.cityInfo(q.id);
       case 'kingdom':
         return this.kingdomSys.info(q.id);
+      case 'lists':
+        return { kingdoms: this.kingdomSys.list(), cities: this.cities.cities.filter((c) => c.alive).map((c) => ({ id: c.id, name: c.name, pop: c.pop, kingdom: c.kingdom, race: SPECIES[c.race]!.key })), ...this.listsExtra() };
       case 'species': {
         return SPECIES.map((d) => ({ key: d.key, kind: d.kind, count: this.creatures.speciesCount[d.id]! }));
       }
       default:
         return this.queryExtra(q);
     }
+  }
+
+  protected listsExtra(): Record<string, unknown> {
+    return {};
   }
 
   protected queryExtra(_q: Query): unknown {
@@ -396,6 +442,9 @@ export class Simulation {
     if (c) extra['unit.city'] = c.name;
     if (e.job[i]) extra['unit.job'] = 'job.' + e.job[i];
     if (e.carryAmt[i]) extra['unit.carry'] = `${e.carryAmt[i]} × ${ECON_RES[e.carry[i]!]}`;
+    const k = this.kingdomSys.get(e.kingdom[i]!);
+    if (k) extra['cell.kingdom'] = k.name;
+    if (k && k.ruler === e.id(i)) extra['unit.title'] = 'unit.ruler';
     this.cardExtra(i, extra);
     card.extra = extra;
     return card;
@@ -517,6 +566,6 @@ export class Simulation {
   }
 
   protected extraHash(): number {
-    return (this.creatures.hash() ^ this.cities.hash()) >>> 0;
+    return (this.creatures.hash() ^ this.cities.hash() ^ this.kingdomSys.hash()) >>> 0;
   }
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { GameSession } from '../game.ts';
 import { t } from '../i18n.ts';
+import { KingdomPanel } from './KingdomPanel.tsx';
 
 export interface CityInfo {
   id: number;
@@ -30,6 +31,7 @@ export interface CityInfo {
 
 export function CityPanel({ session, id, onClose }: { session: GameSession; id: number; onClose: () => void }) {
   const [c, setC] = useState<CityInfo | null>(null);
+  const [king, setKing] = useState<number | null>(null);
   useEffect(() => {
     let alive = true;
     const load = () => session.query<CityInfo | null>({ kind: 'city', id }).then((d) => alive && setC(d));
@@ -41,12 +43,18 @@ export function CityPanel({ session, id, onClose }: { session: GameSession; id: 
     };
   }, [id]);
   if (!c) return null;
+  if (king !== null) return <KingdomPanel session={session} id={king} onClose={() => setKing(null)} />;
   return (
     <div class="side-panel" data-testid="city-panel">
       <div class="panel-head">
         <b>🏰 {c.name}</b>
         <span class="muted small">{t('species.' + c.race)}</span>
         <span class="grow" />
+        {c.kingdom >= 0 && (
+          <button onClick={() => setKing(c.kingdom)} title={t('cell.kingdom')} data-testid="open-kingdom">
+            🏳
+          </button>
+        )}
         <button onClick={() => session.centerOn(c.x, c.y, Math.max(session.cam.zoom, 8))}>🎯</button>
         <button onClick={onClose}>✕</button>
       </div>
