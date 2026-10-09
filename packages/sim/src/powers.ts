@@ -182,7 +182,7 @@ definePower({
 definePower({
   id: 'erase',
   tab: 'world',
-  icon: '🧽',
+  icon: '🪓',
   brush: true,
   apply(sim, c) {
     const w = sim.world;
@@ -200,3 +200,119 @@ export function applyPower(sim: Simulation, c: PowerCmd): void {
   if (!sim.laws.godPowers) return;
   p.apply(sim, c);
 }
+
+function liquid(id: string, tab: PowerDef['tab'], icon: string, mat: number, danger = false): void {
+  definePower({
+    id,
+    tab,
+    icon,
+    brush: true,
+    danger,
+    apply(sim, c) {
+      const w = sim.world;
+      terrain(sim, c, (i, f) => {
+        if (w.mat[i] !== mat && w.mat[i] !== Mat.None && w.depth[i]! > 0) {
+          if (mat === Mat.Water && w.mat[i] === Mat.Lava) {
+            w.mat[i] = Mat.None;
+            w.depth[i] = 0;
+            w.height[i] = Math.min(255, w.height[i]! + 1);
+          }
+          return;
+        }
+        w.mat[i] = mat;
+        w.depth[i] = Math.min(255, w.depth[i]! + Math.max(1, Math.round(2 * f + 1)));
+        if (mat === Mat.Lava) w.heat[i] = 200;
+        if (mat === Mat.Water || mat === Mat.Snow) w.fire[i] = 0;
+        w.wake(i, 40);
+      });
+    },
+  });
+}
+
+liquid('water', 'nature', '💧', Mat.Water);
+liquid('snow', 'nature', '❄', Mat.Snow);
+liquid('lava', 'destruction', '🌋', Mat.Lava, false);
+liquid('acid', 'destruction', '🧪', Mat.Acid, false);
+
+definePower({
+  id: 'ice',
+  tab: 'nature',
+  icon: '🧊',
+  brush: true,
+  apply(sim, c) {
+    const w = sim.world;
+    terrain(sim, c, (i) => {
+      w.heat[i] = Math.min(w.heat[i]!, -20);
+      if (w.mat[i] === Mat.Water) w.mat[i] = Mat.Ice;
+      else if (w.mat[i] === Mat.Lava) {
+        w.mat[i] = Mat.None;
+        w.depth[i] = 0;
+        w.height[i] = Math.min(255, w.height[i]! + 1);
+      }
+      w.fire[i] = 0;
+      w.wake(i, 60);
+    });
+  },
+});
+
+definePower({
+  id: 'heat',
+  tab: 'nature',
+  icon: '🌡',
+  brush: true,
+  apply(sim, c) {
+    const w = sim.world;
+    terrain(sim, c, (i, f) => {
+      w.heat[i] = Math.min(205, w.heat[i]! + 15 * f + 5);
+      w.wake(i, 60);
+    });
+  },
+});
+
+definePower({
+  id: 'cool',
+  tab: 'nature',
+  icon: '🥶',
+  brush: true,
+  apply(sim, c) {
+    const w = sim.world;
+    terrain(sim, c, (i, f) => {
+      w.heat[i] = Math.max(-50, w.heat[i]! - 15 * f - 5);
+      if (w.fire[i]! > 0) w.fire[i] = Math.max(0, w.fire[i]! - 4);
+      w.wake(i, 60);
+    });
+  },
+});
+
+definePower({
+  id: 'sponge',
+  tab: 'nature',
+  icon: '🧽',
+  brush: true,
+  apply(sim, c) {
+    const w = sim.world;
+    terrain(sim, c, (i) => {
+      if (w.mat[i] !== Mat.None) {
+        w.mat[i] = Mat.None;
+        w.depth[i] = 0;
+        if (w.biome[i] === Biome.Sea) w.biome[i] = Biome.Beach;
+      }
+    });
+  },
+});
+
+definePower({
+  id: 'fire',
+  tab: 'destruction',
+  icon: '🔥',
+  brush: true,
+  apply(sim, c) {
+    const w = sim.world;
+    terrain(sim, c, (i) => {
+      if (w.mat[i] === Mat.Water || w.mat[i] === Mat.Ice) return;
+      w.fire[i] = Math.max(w.fire[i]!, 6);
+      w.heat[i] = Math.max(w.heat[i]!, 120);
+      w.wake(i, 60);
+    });
+  },
+});

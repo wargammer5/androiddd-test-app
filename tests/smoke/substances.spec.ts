@@ -1,0 +1,33 @@
+import { test, expect } from '@playwright/test';
+
+test('substances and thermal view', async ({ page }) => {
+  const errs: string[] = [];
+  page.on('pageerror', (e) => errs.push(e.message));
+  page.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
+  await page.goto('/');
+  await page.getByTestId('btn-new').click();
+  await page.getByTestId('size-small').click();
+  await page.getByTestId('btn-create').click();
+  await expect(page.getByTestId('hud-stats')).toBeVisible({ timeout: 60000 });
+  await page.getByTestId('tab-destruction').click();
+  await page.getByTestId('power-lava').click();
+  const box = (await page.getByTestId('world-canvas').boundingBox())!;
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  await page.mouse.move(cx - 40, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx + 40, cy, { steps: 10 });
+  await page.mouse.up();
+  await page.getByTestId('power-fire').click();
+  await page.mouse.click(cx, cy + 50);
+  await page.getByTestId('tab-nature').click();
+  await page.getByTestId('power-water').click();
+  await page.mouse.click(cx + 50, cy - 30);
+  await page.getByTestId('speed-8').click();
+  await page.waitForTimeout(2500);
+  await page.getByTestId('btn-layers').click();
+  await page.getByTestId('layer-4').click();
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: `test-results/thermal-${test.info().project.name}.png` });
+  expect(errs).toEqual([]);
+});

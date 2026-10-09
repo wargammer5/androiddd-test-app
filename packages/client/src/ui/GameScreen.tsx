@@ -14,6 +14,7 @@ import { PauseMenu } from './PauseMenu.tsx';
 import { Hud } from './Hud.tsx';
 import { Confirm } from './Confirm.tsx';
 import { extraPanels } from './panels.ts';
+import { Layers } from './Layers.tsx';
 
 export let currentSession: GameSession | null = null;
 
@@ -121,6 +122,7 @@ export function GameScreen({ params, load, exit }: { params?: NewWorldParams; lo
             </div>
             <Hud session={session} onOpen={setPanel} />
             <span class="spacer" />
+            <Layers session={session} available={[0, 4, 5]} />
             <button onClick={() => setMini((v) => !v)} aria-label="minimap">
               🗺
             </button>

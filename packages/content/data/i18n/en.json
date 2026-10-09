@@ -92,5 +92,21 @@
   "mat.lava": "Lava",
   "mat.acid": "Acid",
   "mat.snow": "Snow",
-  "mat.ice": "Ice"
+  "mat.ice": "Ice",
+  "layer.title": "Map layers",
+  "layer.normal": "Normal",
+  "layer.political": "Politics",
+  "layer.culture": "Cultures",
+  "layer.religion": "Religions",
+  "layer.temperature": "Thermal view",
+  "layer.biomes": "Biomes",
+  "power.water": "Water",
+  "power.snow": "Snow",
+  "power.lava": "Lava",
+  "power.acid": "Acid",
+  "power.ice": "Freeze",
+  "power.heat": "Heat",
+  "power.cool": "Cold",
+  "power.sponge": "Sponge",
+  "power.fire": "Fire"
 }

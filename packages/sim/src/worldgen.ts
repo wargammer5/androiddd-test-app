@@ -96,7 +96,7 @@ export function generateWorld(world: World, rng: Rng, p: GenParams = DEFAULT_GEN
   for (let i = 0; i < n; i++) world.biome[i] = classify(world, i, dist[i]!);
   specialBiomes(world, rng);
   for (let i = 0; i < n; i++) {
-    world.heat[i] = world.baseTemp[i]!;
+    world.heat[i] = world.mat[i] === Mat.Lava ? 200 : world.baseTemp[i]!;
     if (world.biome[i] === Biome.Snow && world.mat[i] === Mat.None && world.baseTemp[i]! < -2) {
       world.mat[i] = Mat.Snow;
       world.depth[i] = 2 + (rng.int(3));

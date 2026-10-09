@@ -1,12 +1,17 @@
 {
   "large-world": {
-    "msPerTick": 0.0005586066666667951,
+    "msPerTick": 0.002051840000003722,
     "entities": 0,
-    "maxMs": 0.0006949999988137279
+    "maxMs": 0.01373799999964831
   },
   "medium-world": {
-    "msPerTick": 0.00045246000000285374,
+    "msPerTick": 0.0009511666666609624,
     "entities": 0,
-    "maxMs": 0.001330999999481719
+    "maxMs": 0.014380999997229083
+  },
+  "large-substances": {
+    "msPerTick": 4.1618673600000085,
+    "entities": 0,
+    "maxMs": 7.5205280000009225
   }
 }

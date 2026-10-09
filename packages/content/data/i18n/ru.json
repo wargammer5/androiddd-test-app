@@ -92,5 +92,21 @@
   "mat.lava": "Лава",
   "mat.acid": "Кислота",
   "mat.snow": "Снег",
-  "mat.ice": "Лёд"
+  "mat.ice": "Лёд",
+  "layer.title": "Слои карты",
+  "layer.normal": "Обычный",
+  "layer.political": "Политика",
+  "layer.culture": "Культуры",
+  "layer.religion": "Религии",
+  "layer.temperature": "Тепловизор",
+  "layer.biomes": "Биомы",
+  "power.water": "Вода",
+  "power.snow": "Снег",
+  "power.lava": "Лава",
+  "power.acid": "Кислота",
+  "power.ice": "Заморозка",
+  "power.heat": "Жар",
+  "power.cool": "Холод",
+  "power.sponge": "Губка",
+  "power.fire": "Огонь"
 }

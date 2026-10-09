@@ -7,6 +7,7 @@ import { UndoStack } from './undo.ts';
 import { applyPower } from './powers.ts';
 import { DEFAULT_LAWS, LAW_PROFILES, sanitizeLaws, type Laws } from './laws.ts';
 import { SaveReader, SaveWriter, migrate, SAVE_VERSION } from './save.ts';
+import { Substances } from './substances.ts';
 
 export const TICK_HZ = 12;
 export const MAX_ENTITIES = 6000;
@@ -33,6 +34,7 @@ export class Simulation {
   private events: SimEvent[] = [];
   private minimapTick = -1000;
   lut: Uint8Array = baseLut();
+  substances!: Substances;
 
   constructor(params: NewWorldParams, skipGen = false) {
     this.seed = params.seed;
@@ -45,7 +47,14 @@ export class Simulation {
     if (!skipGen) generateWorld(this.world, this.rng.fork(1), DEFAULT_GEN);
   }
 
-  protected installSystems(): void {}
+  protected installSystems(): void {
+    this.substances = new Substances();
+    this.systems.push(this.substances);
+  }
+
+  weatherRain(_i: number): boolean {
+    return false;
+  }
 
   enqueue(cmd: Command): void {
     this.queue.push(cmd);
