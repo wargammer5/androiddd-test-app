@@ -2,7 +2,8 @@ import { t } from '../i18n.ts';
 import { useStore } from '../store.ts';
 import { settings, patchSettings, type Quality } from '../settings.ts';
 
-export function SettingsForm() {
+export function SettingsForm({ inGame = false }: { inGame?: boolean }) {
+  void inGame;
   const s = useStore(settings);
   return (
     <div>

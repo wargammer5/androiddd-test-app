@@ -269,3 +269,156 @@ input[type='range'] {
 .small {
   font-size: 12px;
 }
+
+.toolbar {
+  position: absolute;
+  left: calc(6px + var(--safe-l));
+  right: calc(6px + var(--safe-r));
+  bottom: calc(6px + var(--safe-b));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: none;
+  align-items: center;
+}
+.toolbar > * {
+  pointer-events: auto;
+}
+.tool-row,
+.tool-args {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 4px;
+  max-width: 100%;
+}
+.tool-args {
+  overflow-x: auto;
+  touch-action: pan-x;
+  scrollbar-width: none;
+}
+.tool-args button {
+  white-space: nowrap;
+  font-size: 13px;
+}
+.tool-powers {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  touch-action: pan-x;
+  scrollbar-width: none;
+  max-width: calc(100vw - 90px);
+}
+.tool-powers::-webkit-scrollbar,
+.tool-args::-webkit-scrollbar {
+  display: none;
+}
+button.power {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  min-width: calc(56px * var(--ui));
+  line-height: 1.05;
+}
+.power .pi {
+  font-size: 20px;
+}
+.power .pl {
+  font-size: 10px;
+  color: var(--muted);
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.power.on .pl {
+  color: var(--accent);
+}
+.tabs {
+  display: flex;
+  gap: 2px;
+}
+.tabs button {
+  font-size: 18px;
+  padding: 0 6px;
+}
+.brush {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.brush input[type='range'] {
+  width: clamp(70px, 22vw, 160px);
+}
+
+.minimap {
+  position: absolute;
+  top: calc(64px * var(--ui) + var(--safe-t));
+  right: calc(6px + var(--safe-r));
+  width: clamp(110px, 26vw, 200px);
+  aspect-ratio: 1;
+  border: 2px solid var(--line);
+  border-radius: 6px;
+  image-rendering: pixelated;
+  background: #000;
+  touch-action: none;
+}
+
+.side-panel {
+  position: absolute;
+  left: calc(6px + var(--safe-l));
+  top: calc(64px * var(--ui) + var(--safe-t));
+  width: min(340px, calc(100vw - 12px));
+  max-height: calc(100% - 230px * var(--ui));
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+  touch-action: pan-y;
+  z-index: 5;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.panel-head button {
+  min-height: 40px;
+  min-width: 40px;
+}
+.kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 10px;
+  font-size: 13px;
+}
+.kv > span {
+  color: var(--muted);
+}
+.kv > b {
+  font-weight: 600;
+}
+
+.chip {
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .side-panel {
+    top: auto;
+    bottom: calc(132px * var(--ui) + var(--safe-b));
+    max-height: 42%;
+  }
+  .hud-top .chip .muted {
+    display: none;
+  }
+  .speed button {
+    min-width: calc(38px * var(--ui));
+  }
+}

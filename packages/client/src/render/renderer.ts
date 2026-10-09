@@ -76,7 +76,18 @@ void main(){
   vec3 col;
   float v = hash(vec2(c));
   if (detailed) {
-    col = tile(float(biome * 4 + int(v * 4.0)), f).rgb;
+    int tb = biome;
+    if (uQuality > 0) {
+      vec2 e = f - 0.5;
+      ivec2 dir = abs(e.x) > abs(e.y) ? ivec2(sign(e.x), 0) : ivec2(0, sign(e.y));
+      float edgeDist = 0.5 - max(abs(e.x), abs(e.y));
+      int nb = fetch0(c + dir).r & 127;
+      if (nb != biome && nb != 0 && biome != 0) {
+        float hp = hash(floor(wp * 8.0));
+        if (hp > 0.5 + edgeDist * 3.0) tb = nb;
+      }
+    }
+    col = tile(float(tb * 4 + int(v * 4.0)), f).rgb;
   } else {
     col = lut(7, biome).rgb * (0.94 + 0.12 * v);
   }
@@ -115,7 +126,9 @@ void main(){
 
   if (obj > 0) {
     if (detailed) {
-      vec4 o = tile(float(128 + obj), f);
+      float ti = obj < 80 ? float(128 + obj) : obj < 128 ? float(256 + (obj - 80) * 4 + min(stage, 3)) : float(448 + obj - 140);
+      vec4 o = tile(ti, f);
+      if (o.r > 0.98 && o.g < 0.02 && o.b > 0.98) o.rgb = owner > 0 ? lut(0, owner).rgb * 0.85 : vec3(0.55, 0.32, 0.22);
       col = mix(col, o.rgb * shade, o.a);
     } else {
       vec4 oc = lut(6, obj);

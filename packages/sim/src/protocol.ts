@@ -86,7 +86,7 @@ export const META_STRIDE = 2;
 
 export type FromWorker =
   | { t: 'ready'; w: number; h: number; seed: string; size: WorldSizeKey; t0: Uint8Array; t1: Uint8Array; lut: Uint8Array }
-  | { t: 'frame'; tick: number; count: number; buf: ArrayBuffer; meta: ArrayBuffer; patches: ChunkPatch[]; events: SimEvent[]; stats: FrameStats; lut?: Uint8Array; follow?: { id: number; x: number; y: number } }
+  | { t: 'frame'; tick: number; count: number; buf: ArrayBuffer; meta: ArrayBuffer; patches: ChunkPatch[]; events: SimEvent[]; stats: FrameStats; lut?: Uint8Array; follow?: { id: number; x: number; y: number }; minimap?: { w: number; h: number; data: Uint8Array } }
   | { t: 'saved'; reqId: number; bytes: ArrayBuffer }
   | { t: 'answer'; reqId: number; data: unknown }
   | { t: 'error'; message: string };

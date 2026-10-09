@@ -3,3 +3,8 @@ export * from './world.ts';
 export * from './sim.ts';
 export * from './protocol.ts';
 export * from './palette.ts';
+export * from './objects.ts';
+export * from './save.ts';
+export * from './laws.ts';
+export * from './powers.ts';
+export * from './worldgen.ts';

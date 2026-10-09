@@ -9,6 +9,7 @@ let last = performance.now();
 let tickMs = 0;
 const spare: { buf: ArrayBuffer; meta: ArrayBuffer }[] = [];
 let timer: ReturnType<typeof setTimeout> | null = null;
+let forceMini = true;
 
 function post(msg: FromWorker, transfer: Transferable[] = []): void {
   ctx.postMessage(msg, transfer);
@@ -26,6 +27,7 @@ function start(s: Simulation): void {
   s.world.dirty.fill(0);
   post({ t: 'ready', w: s.world.w, h: s.world.h, seed: s.seed, size: s.size, t0, t1, lut: buildLut(s) }, [t0.buffer, t1.buffer]);
   spare.length = 0;
+  forceMini = true;
   for (let i = 0; i < 2; i++) spare.push({ buf: new ArrayBuffer(s.entCapacityBytes()), meta: new ArrayBuffer(s.metaCapacityBytes()) });
   if (!timer) loop();
 }
@@ -66,7 +68,7 @@ function loop(): void {
       break;
     }
   }
-  if (n === 0 && !s.hasPendingVisual()) return;
+  if (n === 0 && !s.hasPendingVisual() && !forceMini) return;
   const bufs = spare.pop();
   if (!bufs) return;
   const count = s.writeEntities(new Float32Array(bufs.buf), new Uint32Array(bufs.meta));
@@ -75,7 +77,10 @@ function loop(): void {
   for (const p of patches) transfer.push(p.t0.buffer, p.t1.buffer);
   const lut = s.lutDirty ? buildLut(s) : undefined;
   s.lutDirty = false;
-  post({ t: 'frame', tick: s.tick, count, buf: bufs.buf, meta: bufs.meta, patches, events: s.drainEvents(), stats: s.stats(tickMs), lut, follow: s.followInfo() }, transfer);
+  const minimap = s.minimap(forceMini);
+  forceMini = false;
+  if (minimap) transfer.push(minimap.data.buffer);
+  post({ t: 'frame', tick: s.tick, count, buf: bufs.buf, meta: bufs.meta, patches, events: s.drainEvents(), stats: s.stats(tickMs), lut, follow: s.followInfo(), minimap }, transfer);
 }
 
 ctx.onmessage = (e: MessageEvent<ToWorker>) => {

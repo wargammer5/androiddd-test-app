@@ -48,6 +48,7 @@ export class GameSession {
   private onFrameHooks: ((s: FrameStats) => void)[] = [];
   private lastFollow: { id: number; x: number; y: number } | null = null;
   followCam = false;
+  minimapData: { w: number; h: number; data: Uint8Array } | null = null;
 
   constructor() {
     this.worker = new Worker(new URL('./worker/sim.worker.ts', import.meta.url), { type: 'module' });
@@ -136,6 +137,7 @@ export class GameSession {
         this.send({ t: 'ret', buf: m.buf, meta: m.meta }, [m.buf, m.meta]);
         this.stats.set(m.stats);
         if (m.events.length) this.events.update((l) => [...l, ...m.events].slice(-300));
+        if (m.minimap) this.minimapData = m.minimap;
         this.lastFollow = m.follow ?? null;
         this.follow.set(m.follow ?? null);
         for (const h of this.onFrameHooks) h(m.stats);
