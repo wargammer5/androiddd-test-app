@@ -27,7 +27,7 @@ test('terrain brush, undo, save and load', async ({ page }) => {
   await page.getByTestId('btn-undo').click();
   await page.getByTestId('tool-hand').click();
   await page.mouse.click(cx, cy);
-  await expect(page.getByTestId('inspector')).toBeVisible({ timeout: 5000 });
+  await expect(page.locator('[data-testid=inspector], [data-testid=unit-card]').first()).toBeVisible({ timeout: 5000 });
   await page.getByTestId('btn-menu').click();
   await page.getByTestId('save-slot-1').click();
   await expect(page.getByTestId('save-msg')).toBeVisible({ timeout: 15000 });

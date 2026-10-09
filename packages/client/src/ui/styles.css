@@ -443,3 +443,39 @@ button.power {
 .layers-pop button {
   text-align: left;
 }
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  margin: 3px 0;
+}
+.bar-l {
+  min-width: 92px;
+  color: var(--muted);
+}
+.bar-t {
+  flex: 1;
+  height: 8px;
+  background: #0f1119;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.bar-t > span {
+  display: block;
+  height: 100%;
+}
+.traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0;
+}
+.trait {
+  font-size: 11px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 2px 8px;
+}

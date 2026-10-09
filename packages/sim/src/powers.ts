@@ -316,3 +316,49 @@ definePower({
     });
   },
 });
+
+const SPAWN_ICONS: Record<string, string> = {
+  velen: '🧑',
+  drok: '🧔',
+  sylv: '🧝',
+  skarn: '🦎',
+  rabbit: '🐇',
+  deer: '🦌',
+  sheep: '🐑',
+  wolf: '🐺',
+  bear: '🐻',
+  fox: '🦊',
+  crab: '🦀',
+  lizard: '🦎',
+};
+
+const lastSpawn = new Map<number, [number, number]>();
+
+export function defineSpawn(key: string, tab: PowerDef['tab'], icon: string, danger = false, groupSize = 1): void {
+  definePower({
+    id: 'spawn_' + key,
+    tab,
+    icon,
+    brush: false,
+    danger,
+    apply(sim, c) {
+      const last = lastSpawn.get(c.stroke);
+      if (last && Math.hypot(last[0] - c.x, last[1] - c.y) < 2) return;
+      lastSpawn.set(c.stroke, [c.x, c.y]);
+      if (lastSpawn.size > 50) lastSpawn.delete(lastSpawn.keys().next().value!);
+      const sp = SPECIES_BY_KEY.get(key);
+      if (sp === undefined) return;
+      sim.undo.begin(c.stroke, c.power);
+      const ids = sim.creatures.spawnGroup(sp, c.x, c.y, groupSize);
+      for (const i of ids) sim.undo.spawned(sim.creatures.e.id(i));
+      sim.onSpawnedByPlayer(ids, key);
+    },
+  });
+}
+
+import { species as SPECIES_DATA } from '@sotv/content';
+const SPECIES_BY_KEY = new Map(SPECIES_DATA.map((s) => [s.key, s.id]));
+for (const d of SPECIES_DATA) {
+  if (d.kind === 'civ') defineSpawn(d.key, 'civ', SPAWN_ICONS[d.key] ?? '👤');
+  else if (d.kind === 'animal') defineSpawn(d.key, 'creatures', SPAWN_ICONS[d.key] ?? '🐾');
+}

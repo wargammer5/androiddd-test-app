@@ -204,6 +204,7 @@ void main(){
   uint size = (aMeta.x >> 14) & 3u;
   uint flags = (aMeta.x >> 16) & 255u;
   float scale = float(size + 1u);
+  if (((aMeta.x >> 24) & 1u) == 1u) scale *= 0.7;
   if (uDots == 1) scale = max(scale, 2.5 / uZoom * 1.0);
   vec2 local = aCorner * scale;
   vec2 wp = p + vec2(local.x - scale * 0.5, local.y - scale);

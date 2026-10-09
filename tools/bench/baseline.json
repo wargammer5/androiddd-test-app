@@ -1,17 +1,22 @@
 {
   "large-world": {
-    "msPerTick": 0.002051840000003722,
-    "entities": 0,
-    "maxMs": 0.01373799999964831
+    "msPerTick": 1.4641644133333223,
+    "entities": 1316,
+    "maxMs": 6.255588999996689
   },
   "medium-world": {
-    "msPerTick": 0.0009511666666609624,
-    "entities": 0,
-    "maxMs": 0.014380999997229083
+    "msPerTick": 0.7017672666666719,
+    "entities": 632,
+    "maxMs": 3.172125999997661
   },
   "large-substances": {
-    "msPerTick": 4.1618673600000085,
-    "entities": 0,
-    "maxMs": 7.5205280000009225
+    "msPerTick": 5.324131123333331,
+    "entities": 1412,
+    "maxMs": 9.901872000002186
+  },
+  "large-3000": {
+    "msPerTick": 3.006499159999997,
+    "entities": 2440,
+    "maxMs": 10.190153999996255
   }
 }

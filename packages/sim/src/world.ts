@@ -57,6 +57,7 @@ export class World {
   readonly dirty: Uint8Array;
   readonly active: Uint8Array;
   readonly kingdomOfZone: Uint8Array;
+  readonly ver: Uint32Array;
 
   constructor(w: number, h: number) {
     this.w = w;
@@ -80,6 +81,7 @@ export class World {
     this.dirty = new Uint8Array(this.cw * this.ch);
     this.active = new Uint8Array(this.cw * this.ch);
     this.kingdomOfZone = new Uint8Array(65536);
+    this.ver = new Uint32Array(this.cw * this.ch);
   }
 
   idx(x: number, y: number): number {
@@ -97,12 +99,15 @@ export class World {
   }
 
   touch(i: number): void {
-    this.dirty[this.chunkOf(i)] = 1;
+    const c = this.chunkOf(i);
+    this.dirty[c] = 1;
+    this.ver[c]!++;
   }
 
   wake(i: number, ticks = 60): void {
     const c = this.chunkOf(i);
     this.dirty[c] = 1;
+    this.ver[c]!++;
     if (this.active[c]! < ticks) this.active[c] = ticks;
     const x = i % this.w;
     const y = (i - x) / this.w;
@@ -117,6 +122,7 @@ export class World {
   wakeChunk(c: number, ticks = 60): void {
     if (this.active[c]! < ticks) this.active[c] = ticks;
     this.dirty[c] = 1;
+    this.ver[c]!++;
   }
 
   markAllDirty(): void {

@@ -69,9 +69,9 @@ function groundTile(p: AtlasPainter, t: number, key: string, base: RGB, variant:
   for (let y = 0; y < TILE; y++)
     for (let x = 0; x < TILE; x++) {
       const r = p.rand();
-      p.set(t, x, y, shade(base, 0.92 + r * 0.16));
+      p.set(t, x, y, shade(base, 0.86 + r * 0.26));
     }
-  const dots = 3 + variant;
+  const dots = 6 + variant * 2;
   for (let i = 0; i < dots; i++) {
     const x = Math.floor(p.rand() * TILE);
     const y = Math.floor(p.rand() * TILE);

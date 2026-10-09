@@ -8,3 +8,8 @@ export * from './save.ts';
 export * from './laws.ts';
 export * from './powers.ts';
 export * from './worldgen.ts';
+export * from './entities.ts';
+export * from './creatures.ts';
+export * from './pathfind.ts';
+export * from './time.ts';
+export * from './names.ts';

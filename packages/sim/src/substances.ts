@@ -52,6 +52,7 @@ export class Substances implements System {
       if (changed) {
         if (w.active[c]! < 24) w.active[c] = 24;
         w.dirty[c] = 1;
+        w.ver[c]!++;
       } else w.active[c] = w.active[c]! - 1;
     }
   }

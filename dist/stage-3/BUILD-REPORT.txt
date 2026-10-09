@@ -1,0 +1,10 @@
+Sotvorenie v0.3.0 stage 3
+APK Sotvorenie-v0.3.0-stage3.apk 0.12 MB
+tests: ok
+content: ok
+bench: ok
+web build: ok
+smoke: ok
+apk: ok
+verify: ok
+bench: { "large-world": { "msPerTick": 1.6145197033333323, "entities": 1316, "maxMs": 7.149927000000389 }, "medium-world": { "msPerTick": 0.713527373333333, "entities": 632, "maxMs": 3.2759490000025835 }, "large-substances": { "msPerTick": 5.165450386666659, "entities": 1412, "maxMs": 9.55105999999796 }, "large-3000": { "msPerTick": 2.9970681066666534, "entities": 2440, "maxMs": 10.258560999995098 } } 

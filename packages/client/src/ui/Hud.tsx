@@ -11,6 +11,8 @@ export function Hud({ session }: { session: GameSession; onOpen: (p: string) => 
       <span>
         {t('hud.year', { y: s.year + 1 })}, {t('hud.day', { d: s.day + 1 })}
       </span>
+      <span title={t('hud.population')}>👥 {s.population}</span>
+      <span class="muted small">🐾 {s.creatures}</span>
       <span class="muted small">{fps} fps</span>
     </div>
   );

@@ -8,6 +8,11 @@ import { applyPower } from './powers.ts';
 import { DEFAULT_LAWS, LAW_PROFILES, sanitizeLaws, type Laws } from './laws.ts';
 import { SaveReader, SaveWriter, migrate, SAVE_VERSION } from './save.ts';
 import { Substances } from './substances.ts';
+import { Creatures } from './creatures.ts';
+import { calendar } from './time.ts';
+import { isPlant, plantType, plantStage, plantObj, PlantType, Stage } from './objects.ts';
+import { EFlag } from './entities.ts';
+import { species as SPECIES } from '@sotv/content';
 
 export const TICK_HZ = 12;
 export const MAX_ENTITIES = 6000;
@@ -35,6 +40,8 @@ export class Simulation {
   private minimapTick = -1000;
   lut: Uint8Array = baseLut();
   substances!: Substances;
+  creatures!: Creatures;
+  startPeoples = true;
 
   constructor(params: NewWorldParams, skipGen = false) {
     this.seed = params.seed;
@@ -43,13 +50,65 @@ export class Simulation {
     this.world = new World(s, s);
     this.rng = new Rng(hashString(params.seed));
     if (params.laws) this.laws = sanitizeLaws(params.laws as Partial<Laws>);
+    this.startPeoples = params.laws?.['startPeoples'] !== false;
     this.installSystems();
-    if (!skipGen) generateWorld(this.world, this.rng.fork(1), DEFAULT_GEN);
+    if (!skipGen) {
+      generateWorld(this.world, this.rng.fork(1), DEFAULT_GEN);
+      this.populate();
+    }
+  }
+
+  protected populate(): void {
+    this.creatures.spawnInitial();
+    if (this.startPeoples) this.spawnPeoples();
+  }
+
+  spawnPeoples(): void {
+    const w = this.world;
+    const r = this.rng.fork(5);
+    const BIOME_KEYS = ['sea', 'plains', 'forest', 'jungle', 'savanna', 'desert', 'mountain', 'snow', 'swamp', 'volcanic', 'acid', 'magic', 'beach'];
+    for (const d of SPECIES) {
+      if (d.kind !== 'civ') continue;
+      const want = new Set(d.biomes.map((b) => BIOME_KEYS.indexOf(b)));
+      for (let t = 0; t < 400; t++) {
+        const c = r.int(w.n);
+        if (!want.has(w.biome[c]!) || w.mat[c] !== Mat.None || w.obj[c] !== 0) continue;
+        const ids = this.creatures.spawnGroup(d.id, (c % w.w) + 0.5, Math.floor(c / w.w) + 0.5, 8);
+        for (const i of ids) {
+          this.creatures.e.age[i] = d.maturity + r.float() * d.maturity;
+          this.creatures.e.sex[i] = ids.indexOf(i) % 2;
+        }
+        break;
+      }
+    }
   }
 
   protected installSystems(): void {
     this.substances = new Substances();
-    this.systems.push(this.substances);
+    this.creatures = new Creatures(this);
+    this.systems.push(this.substances, this.creatures);
+  }
+
+  onUnitDeath(_i: number, _cell: number): void {}
+
+  onSpawnedByPlayer(_ids: number[], _key: string): void {}
+
+  onUnitHit(_victim: number, _attacker: number): void {}
+
+  onPlantEaten(cell: number, o: number): void {
+    const w = this.world;
+    if (!isPlant(o)) return;
+    const t = plantType(o);
+    const st = plantStage(o);
+    if (st === Stage.Fruiting) w.obj[cell] = plantObj(t, Stage.Adult);
+    else if (t === PlantType.Flower || t === PlantType.Berry) w.obj[cell] = st > Stage.Sprout ? plantObj(t, Stage.Sprout) : 0;
+    w.objData[cell] = 0;
+    w.touch(cell);
+  }
+
+  unitColor(i: number): number {
+    const k = this.creatures.e.kingdom[i]!;
+    return k >= 0 ? k + 1 : 0;
   }
 
   weatherRain(_i: number): boolean {
@@ -111,9 +170,28 @@ export class Simulation {
     }
   }
 
-  protected onUndo(_spawned: number[]): void {}
+  protected onUndo(spawned: number[]): void {
+    const e = this.creatures.e;
+    for (const id of spawned) {
+      const i = e.index(id);
+      if (i >= 0) this.creatures.die(i, -1, 'undo');
+    }
+  }
 
-  protected applyExtra(_c: Command): void {}
+  protected applyExtra(c: Command): void {
+    const e = this.creatures.e;
+    if (c.t === 'favorite') {
+      const i = e.index(c.id);
+      if (i >= 0) e.flags[i] = c.on ? e.flags[i]! | EFlag.Favorite : e.flags[i]! & ~EFlag.Favorite;
+    } else if (c.t === 'debug' && c.key === 'follow') {
+      this.creatures.followId = c.value ?? -1;
+    } else if (c.t === 'spawn') {
+      const d = SPECIES.find((s) => s.key === c.kind);
+      if (d) this.creatures.spawnGroup(d.id, c.x, c.y, 1);
+    } else this.applyMore(c);
+  }
+
+  protected applyMore(_c: Command): void {}
 
   hasPendingVisual(): boolean {
     return this.world.dirty.indexOf(1) >= 0;
@@ -127,8 +205,12 @@ export class Simulation {
     return MAX_ENTITIES * 2 * 4;
   }
 
-  writeEntities(_pos: Float32Array, _meta: Uint32Array): number {
-    return 0;
+  writeEntities(pos: Float32Array, meta: Uint32Array): number {
+    return this.creatures.write(pos, meta, (i) => this.unitColor(i));
+  }
+
+  hasUnits(): boolean {
+    return this.creatures.e.count > 0;
   }
 
   paletteLut(): Uint8Array {
@@ -136,7 +218,10 @@ export class Simulation {
   }
 
   followInfo(): { id: number; x: number; y: number } | undefined {
-    return undefined;
+    const c = this.creatures;
+    const i = c.e.index(c.followId);
+    if (i < 0) return undefined;
+    return { id: c.followId, x: c.e.x[i]!, y: c.e.y[i]! };
   }
 
   minimap(force = false): { w: number; h: number; data: Uint8Array } | undefined {
@@ -196,14 +281,17 @@ export class Simulation {
   }
 
   stats(tickMs: number): FrameStats {
+    const cal = calendar(this.tick);
+    let pop = 0;
+    for (const d of SPECIES) if (d.kind === 'civ') pop += this.creatures.speciesCount[d.id]!;
     return {
       tick: this.tick,
-      day: 0,
-      year: 0,
-      season: 0,
-      dayPhase: 0.5,
-      population: 0,
-      creatures: 0,
+      day: cal.day,
+      year: cal.year,
+      season: cal.season,
+      dayPhase: cal.dayPhase,
+      population: pop,
+      creatures: this.creatures.e.count,
       cities: 0,
       kingdoms: 0,
       tickMs,
@@ -213,9 +301,33 @@ export class Simulation {
   }
 
   query(q: Query): unknown {
-    if (q.kind === 'cell') return this.cellInfo(q.x, q.y);
-    if (q.kind === 'laws') return this.laws;
+    switch (q.kind) {
+      case 'cell':
+        return this.cellInfo(q.x, q.y);
+      case 'laws':
+        return this.laws;
+      case 'unitAt': {
+        const i = this.creatures.unitAt(q.x, q.y, q.r);
+        return i >= 0 ? { id: this.creatures.e.id(i) } : null;
+      }
+      case 'unit': {
+        const i = this.creatures.e.index(q.id);
+        return i >= 0 ? this.unitCard(i) : null;
+      }
+      case 'species': {
+        return SPECIES.map((d) => ({ key: d.key, kind: d.kind, count: this.creatures.speciesCount[d.id]! }));
+      }
+      default:
+        return this.queryExtra(q);
+    }
+  }
+
+  protected queryExtra(_q: Query): unknown {
     return null;
+  }
+
+  unitCard(i: number): unknown {
+    return this.creatures.card(i);
   }
 
   cellInfo(x: number, y: number): unknown {
@@ -319,6 +431,6 @@ export class Simulation {
   }
 
   protected extraHash(): number {
-    return 0;
+    return this.creatures.hash();
   }
 }

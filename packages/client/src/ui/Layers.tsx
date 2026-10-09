@@ -4,7 +4,7 @@ import { useStore } from '../store.ts';
 import { t } from '../i18n.ts';
 
 export const LAYERS: { id: number; key: string; icon: string }[] = [
-  { id: 0, key: 'layer.normal', icon: '🗺' },
+  { id: 0, key: 'layer.normal', icon: '▦' },
   { id: 1, key: 'layer.political', icon: '🏳' },
   { id: 2, key: 'layer.culture', icon: '🎭' },
   { id: 3, key: 'layer.religion', icon: '⛩' },
