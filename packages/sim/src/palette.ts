@@ -24,5 +24,18 @@ export function baseLut(): Uint8Array {
   const lut = new Uint8Array(256 * 8 * 4);
   for (const b of biomes) lutSet(lut, LUT_BIOME, b.id, hexRgb(b.color));
   for (let i = 0; i < 256; i++) lutSet(lut, LUT_UNIT, i, [230, 230, 230]);
+  const plantCol = [[50, 110, 45], [30, 85, 55], [90, 150, 60], [30, 100, 40], [90, 150, 80], [70, 130, 60], [120, 170, 80], [190, 170, 140], [160, 120, 230]];
+  for (let t = 0; t < 9; t++)
+    for (let st = 0; st < 6; st++) lutSet(lut, LUT_OBJECT, 1 + t * 6 + st, plantCol[t]!, st < 2 ? 40 : st < 3 ? 120 : 190);
+  for (let o = 60; o <= 63; o++) lutSet(lut, LUT_OBJECT, o, [125, 120, 115], 200);
+  lutSet(lut, LUT_OBJECT, 64, [40, 36, 32], 230);
+  lutSet(lut, LUT_OBJECT, 65, [60, 50, 40], 230);
+  lutSet(lut, LUT_OBJECT, 66, [150, 210, 250], 200);
+  lutSet(lut, LUT_OBJECT, 67, [240, 120, 30], 255);
+  lutSet(lut, LUT_OBJECT, 68, [150, 140, 130], 200);
+  for (let o = 70; o <= 73; o++) lutSet(lut, LUT_OBJECT, o, o === 73 ? [210, 180, 70] : [130, 100, 60], 200);
+  for (let o = 74; o <= 79; o++) lutSet(lut, LUT_OBJECT, o, [60, 52, 48], 160);
+  for (let o = 80; o < 128; o++) lutSet(lut, LUT_OBJECT, o, [150, 100, 70], 255);
+  for (let o = 140; o < 150; o++) lutSet(lut, LUT_OBJECT, o, [130, 110, 90], 200);
   return lut;
 }

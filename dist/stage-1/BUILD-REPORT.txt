@@ -1,0 +1,10 @@
+Sotvorenie v0.1.0 stage 1
+APK Sotvorenie-v0.1.0-stage1.apk 0.09 MB
+tests: ok
+content: ok
+bench: ok
+web build: ok
+smoke: ok
+apk: ok
+verify: ok
+bench: { "large-world": { "msPerTick": 0.0005893700000039341, "entities": 0, "maxMs": 0.0022519999984069727 }, "medium-world": { "msPerTick": 0.00045624666666602327, "entities": 0, "maxMs": 0.0019339999998919666 } } 
