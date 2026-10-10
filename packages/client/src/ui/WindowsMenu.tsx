@@ -10,8 +10,14 @@ export const WINDOWS: { id: string; icon: string; key: string }[] = [
   { id: 'laws', icon: '📜', key: 'laws.title' },
 ];
 
+export function popSide(button: HTMLElement): 'left' | 'right' {
+  const r = button.getBoundingClientRect();
+  return r.left + r.width / 2 < window.innerWidth / 2 ? 'left' : 'right';
+}
+
 export function WindowsMenu({ current, open }: { current: string | null; open: (id: string | null) => void }) {
   const [pop, setPop] = useState(false);
+  const [side, setSide] = useState<'left' | 'right'>('right');
   const toggle = (id: string) => open(current === id ? null : id);
   return (
     <>
@@ -23,11 +29,19 @@ export function WindowsMenu({ current, open }: { current: string | null; open: (
         ))}
       </span>
       <span class="win-menu layers">
-        <button onClick={() => setPop((p) => !p)} data-testid="btn-windows" aria-label="windows" class={current ? 'on' : ''}>
+        <button
+          onClick={(e) => {
+            setSide(popSide(e.currentTarget as HTMLElement));
+            setPop((p) => !p);
+          }}
+          data-testid="btn-windows"
+          aria-label="windows"
+          class={current ? 'on' : ''}
+        >
           🗂
         </button>
         {pop && (
-          <div class="layers-pop">
+          <div class={'layers-pop ' + side}>
             {WINDOWS.map((w) => (
               <button
                 key={w.id}

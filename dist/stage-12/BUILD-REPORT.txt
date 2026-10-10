@@ -1,5 +1,5 @@
-Sotvorenie v1.1.1 stage 12
-APK Sotvorenie-v1.1.1-stage12.apk 13.78 MB
+Sotvorenie v1.1.2 stage 12
+APK Sotvorenie-v1.1.2-stage12.apk 13.78 MB
 tests: ok
 content: ok
 bench: ok
