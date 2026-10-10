@@ -114,6 +114,9 @@ ctx.onmessage = (e: MessageEvent<ToWorker>) => {
       case 'ret':
         if (sim && m.buf.byteLength === sim.entCapacityBytes()) spare.push({ buf: m.buf, meta: m.meta });
         break;
+      case 'layer':
+        sim?.setLayer(m.mode);
+        break;
       case 'full':
         sim?.world.markAllDirty();
         break;

@@ -17,10 +17,12 @@ import { extraPanels } from './panels.ts';
 import { Layers } from './Layers.tsx';
 import { KingdomList } from './KingdomList.tsx';
 import { DiplomacyPanel } from './DiplomacyPanel.tsx';
+import { BeliefsPanel } from './BeliefsPanel.tsx';
 import { registerPanel } from './panels.ts';
 
 registerPanel('kingdoms', KingdomList);
 registerPanel('diplomacy', DiplomacyPanel);
+registerPanel('beliefs', BeliefsPanel);
 
 export let currentSession: GameSession | null = null;
 
@@ -134,7 +136,10 @@ export function GameScreen({ params, load, exit }: { params?: NewWorldParams; lo
             <button onClick={() => setPanel((p) => (p === 'diplomacy' ? null : 'diplomacy'))} data-testid="btn-diplomacy" aria-label="diplomacy">
               ⚔
             </button>
-            <Layers session={session} available={[0, 1, 4, 5]} />
+            <button onClick={() => setPanel((p) => (p === 'beliefs' ? null : 'beliefs'))} data-testid="btn-beliefs" aria-label="beliefs">
+              🎭
+            </button>
+            <Layers session={session} available={[0, 1, 2, 3, 4, 5]} />
             <button onClick={() => setMini((v) => !v)} aria-label="minimap">
               🗺
             </button>

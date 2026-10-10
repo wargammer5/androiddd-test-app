@@ -197,9 +197,18 @@ export class Diplomacy implements System {
       const pa = a.army + a.pop * 0.1;
       const pb = b.army + b.pop * 0.1;
       const agg = 0.04 + sim.rulerMod(a, 'war') * 0.04 + sim.laws.eventFrequency * 0.01;
-      if (pa > pb * 0.9 && this.rng.chance(agg)) this.declare(a, b, dist < 8 ? 'border' : 'conquest');
-      else if (pb > pa * 0.9 && this.rng.chance(agg)) this.declare(b, a, dist < 8 ? 'border' : 'conquest');
+      const cause = this.holyCause(a, b) ? 'religion' : dist < 8 ? 'border' : 'conquest';
+      if (pa > pb * 0.9 && this.rng.chance(agg)) this.declare(a, b, cause);
+      else if (pb > pa * 0.9 && this.rng.chance(agg)) this.declare(b, a, cause);
     }
+  }
+
+  private holyCause(a: Kingdom, b: Kingdom): boolean {
+    const sim = this.sim;
+    const ca = sim.cities.city(a.capital);
+    const cb = sim.cities.city(b.capital);
+    if (!ca || !cb || ca.religion < 0 || cb.religion < 0 || ca.religion === cb.religion) return false;
+    return sim.beliefs.tenet(ca.religion, 'war') || sim.beliefs.tenet(cb.religion, 'war');
   }
 
   private commonEnemy(a: number, b: number): boolean {

@@ -476,3 +476,46 @@ definePower({
     if (site >= 0) sim.cities.newCity(race, site, members);
   },
 });
+
+function cityAt(sim: Simulation, x: number, y: number) {
+  const w = sim.world;
+  const cx = Math.floor(x);
+  const cy = Math.floor(y);
+  if (!w.inside(cx, cy)) return null;
+  const z = w.zone[cy * w.w + cx]!;
+  return z ? sim.cities.city(z - 1) : null;
+}
+
+definePower({
+  id: 'prophet',
+  tab: 'civ',
+  icon: '🔮',
+  brush: false,
+  apply(sim, c) {
+    if (lastSpawn.get(c.stroke)) return;
+    lastSpawn.set(c.stroke, [c.x, c.y]);
+    const city = cityAt(sim, c.x, c.y);
+    if (!city) return;
+    const r = sim.beliefs.newReligion(city, sim.creatures.unitName(Math.max(0, sim.creatures.e.index(sim.kingdomSys.get(city.kingdom)?.ruler ?? -1))) || '?', city.religion);
+    city.religion = r.id;
+    sim.emit({ kind: 'religion', text: 'ev.religionFounded', args: { city: city.name, religion: r.name, deity: r.deity, founder: r.founder }, important: true });
+    sim.world.markAllDirty();
+  },
+});
+
+definePower({
+  id: 'inspire',
+  tab: 'civ',
+  icon: '🎭',
+  brush: false,
+  apply(sim, c) {
+    if (lastSpawn.get(c.stroke)) return;
+    lastSpawn.set(c.stroke, [c.x, c.y]);
+    const city = cityAt(sim, c.x, c.y);
+    if (!city) return;
+    const cu = sim.beliefs.newCulture(city.race, city.id, city.culture);
+    city.culture = cu.id;
+    sim.emit({ kind: 'cultureSplit', text: 'ev.cultureNew', args: { city: city.name, culture: cu.name }, important: true });
+    sim.world.markAllDirty();
+  },
+});

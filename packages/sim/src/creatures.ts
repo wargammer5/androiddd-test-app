@@ -206,7 +206,8 @@ export class Creatures implements System {
     const cached = e.names.get(i);
     if (cached) return cached;
     const d = this.def(i);
-    return d.kind === 'civ' ? personName(e.nameSeed[i]!, d.race) : '';
+    if (d.kind !== 'civ') return '';
+    return this.sim.civName(i) ?? personName(e.nameSeed[i]!, d.race);
   }
 
   aiMod(i: number, key: string): number {
@@ -266,7 +267,7 @@ export class Creatures implements System {
       if (!e.alive[i]) continue;
       const ci = Math.floor(e.y[i]!) * w.w + Math.floor(e.x[i]!);
       if (w.fire[ci]! > 0 && !(d.key === 'demon' || d.key === 'dragon')) {
-        if ((tick + i) % 6 === 0) this.damage(i, 1.5 + w.fire[ci]! * 0.6, -1);
+        if ((tick + i) % 6 === 0) this.damage(i, (1.5 + w.fire[ci]! * 0.6) * (1 - this.sim.unitBonus(i, 'fireRes')), -1);
         if (e.task[i] !== Task.Flee) this.fleeFire(i);
       }
       if (w.mat[ci] === Mat.Lava && w.depth[ci]! > 0 && !d.flies && d.key !== 'demon') this.damage(i, 25, -1);
@@ -319,7 +320,7 @@ export class Creatures implements System {
       this.damage(i, e.maxHp[i]! * 0.02, -1);
       if (!e.alive[i]) return;
     }
-    if (e.hunger[i]! < 0.6 && e.hp[i]! < e.maxHp[i]!) e.hp[i] = Math.min(e.maxHp[i]!, e.hp[i]! + e.maxHp[i]! * 0.01);
+    if (e.hunger[i]! < 0.6 && e.hp[i]! < e.maxHp[i]!) e.hp[i] = Math.min(e.maxHp[i]!, e.hp[i]! + e.maxHp[i]! * 0.01 * (1 + this.sim.unitBonus(i, 'heal')));
     const w = sim.world;
     const ci = Math.floor(e.y[i]!) * w.w + Math.floor(e.x[i]!);
     if (!passable(w, ci, this.mover(i))) {
@@ -871,7 +872,7 @@ export class Creatures implements System {
     const e = this.e;
     if (e.cooldown[i]! > 0) return;
     const crit = this.rng.chance(e.crit[i]!);
-    const dmg = e.dmg[i]! * (crit ? 2 : 1) * (0.8 + this.rng.float() * 0.4);
+    const dmg = e.dmg[i]! * (crit ? 2 : 1) * (0.8 + this.rng.float() * 0.4) * (1 + this.sim.unitBonus(i, 'dmg'));
     e.cooldown[i] = Math.round(12 / Math.max(0.5, e.speed[i]! / 1.6));
     e.anim[i] = Anim.Attack;
     e.dir[i] = e.x[j]! < e.x[i]! ? 1 : 0;

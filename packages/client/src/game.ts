@@ -54,6 +54,7 @@ export class GameSession {
     this.worker = new Worker(new URL('./worker/sim.worker.ts', import.meta.url), { type: 'module' });
     this.worker.onmessage = (e: MessageEvent<FromWorker>) => this.onMessage(e.data);
     this.worker.onerror = (e) => this.errors.update((l) => [...l, String(e.message)]);
+    this.overlay.subscribe((mode) => this.send({ t: 'layer', mode }));
     platform.onPause(() => {
       this.hidden = true;
       this.savedSpeed = this.speed.get();

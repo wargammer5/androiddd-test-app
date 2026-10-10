@@ -13,6 +13,7 @@ import { Nature, placePlants } from './nature.ts';
 import { CitySystem, type City } from './cities.ts';
 import { KingdomSystem, type Kingdom } from './kingdoms.ts';
 import { Diplomacy } from './diplomacy.ts';
+import { Beliefs } from './beliefs.ts';
 import { traits as TRAITS } from '@sotv/content';
 import { buildings as BUILDINGS, economy as ECONOMY } from '@sotv/content';
 const ECON_RES = ECONOMY.resources;
@@ -53,6 +54,8 @@ export class Simulation {
   cities!: CitySystem;
   kingdomSys!: KingdomSystem;
   diplomacy!: Diplomacy;
+  beliefs!: Beliefs;
+  layerMode = 0;
   startPeoples = true;
 
   constructor(params: NewWorldParams, skipGen = false) {
@@ -103,8 +106,9 @@ export class Simulation {
     this.cities = new CitySystem(this);
     this.kingdomSys = this.makeKingdoms();
     this.diplomacy = new Diplomacy(this);
+    this.beliefs = new Beliefs(this);
     this.creatures.civ = this.cities;
-    this.systems.push(this.substances, this.nature, this.cities, this.kingdomSys, this.diplomacy, this.creatures);
+    this.systems.push(this.substances, this.nature, this.cities, this.kingdomSys, this.diplomacy, this.beliefs, this.creatures);
   }
 
   protected makeKingdoms(): KingdomSystem {
@@ -118,6 +122,22 @@ export class Simulation {
     const members: number[] = [];
     for (let i = 0; i < e.high; i++) if (e.alive[i] && e.city[i] === c.id && e.clan[i]! < 0) members.push(i);
     this.diplomacy.newClans(members, this.kingdomSys.get(c.kingdom));
+    this.beliefs.onCityFounded(c);
+    if (this.layerMode === 2 || this.layerMode === 3) this.setLayer(this.layerMode);
+  }
+
+  setLayer(mode: number): void {
+    this.layerMode = mode;
+    this.world.zoneMap = mode === 2 || mode === 3 ? this.beliefs.zoneLayer(mode) : this.world.kingdomOfZone;
+    this.world.markAllDirty();
+  }
+
+  civName(i: number): string | null {
+    return this.beliefs.unitName(i);
+  }
+
+  unitBonus(i: number, kind: 'dmg' | 'armor' | 'heal' | 'fireRes' | 'swim' | 'speed'): number {
+    return this.beliefs.unitBonus(i, kind);
   }
 
   onCivBirth(child: number, mother: number): void {
@@ -128,8 +148,8 @@ export class Simulation {
     this.diplomacy.onDeath(i, killer);
   }
 
-  relationBonus(_a: Kingdom, _b: Kingdom): number {
-    return 0;
+  relationBonus(a: Kingdom, b: Kingdom): number {
+    return this.beliefs.relationBonus(a.id, b.id);
   }
 
   warTarget(c: City, i: number): number {
@@ -154,8 +174,13 @@ export class Simulation {
     return this.diplomacy.findHeir(k);
   }
 
-  cityExtra(_c: City): Record<string, string | number> {
-    return {};
+  cityExtra(c: City): Record<string, string | number> {
+    const out: Record<string, string | number> = {};
+    const cu = this.beliefs.cultures[c.culture];
+    if (cu) out['unit.culture'] = cu.name;
+    const re = this.beliefs.religions[c.religion];
+    if (re) out['unit.religion'] = re.name;
+    return out;
   }
 
   kingdomExtra(k: Kingdom): Record<string, string | number> {
@@ -188,7 +213,9 @@ export class Simulation {
     if (k.cities.length === 0) this.kingdomSys.fall(k);
   }
 
-  onPrayer(_c: City, _i: number): void {}
+  onPrayer(c: City, _i: number): void {
+    this.beliefs.onPrayer(c);
+  }
 
   civWorkTarget(c: City, i: number): number {
     if (this.creatures.e.job[i] === 12) return this.diplomacy.traderTarget(c, i);
@@ -300,6 +327,8 @@ export class Simulation {
       if (i >= 0) e.flags[i] = c.on ? e.flags[i]! | EFlag.Favorite : e.flags[i]! & ~EFlag.Favorite;
     } else if (c.t === 'debug' && c.key === 'follow') {
       this.creatures.followId = c.value ?? -1;
+    } else if (c.t === 'edit') {
+      this.beliefs.edit(c.kind, c.id, c.data);
     } else if (c.t === 'spawn') {
       const d = SPECIES.find((s) => s.key === c.kind);
       if (d) this.creatures.spawnGroup(d.id, c.x, c.y, 1);
@@ -330,6 +359,8 @@ export class Simulation {
 
   paletteLut(): Uint8Array {
     this.kingdomSys.writeLut(this.lut);
+    this.beliefs.writeLut(this.lut);
+    if (this.layerMode === 2 || this.layerMode === 3) this.world.zoneMap = this.beliefs.zoneLayer(this.layerMode);
     return this.lut;
   }
 
@@ -451,6 +482,10 @@ export class Simulation {
         return { kingdoms: this.kingdomSys.list(), cities: this.cities.cities.filter((c) => c.alive).map((c) => ({ id: c.id, name: c.name, pop: c.pop, kingdom: c.kingdom, race: SPECIES[c.race]!.key })), ...this.listsExtra() };
       case 'diplomacy':
         return this.diplomacy.info();
+      case 'culture':
+        return this.beliefs.info('culture', q.id);
+      case 'religion':
+        return this.beliefs.info('religion', q.id);
       case 'species': {
         return SPECIES.map((d) => ({ key: d.key, kind: d.kind, count: this.creatures.speciesCount[d.id]! }));
       }
@@ -460,7 +495,7 @@ export class Simulation {
   }
 
   protected listsExtra(): Record<string, unknown> {
-    return {};
+    return this.beliefs.list() as Record<string, unknown>;
   }
 
   protected queryExtra(_q: Query): unknown {
@@ -480,6 +515,10 @@ export class Simulation {
     if (k && k.ruler === e.id(i)) extra['unit.title'] = 'unit.ruler';
     const clan = this.diplomacy.clans[e.clan[i]!];
     if (clan) extra['unit.clan'] = clan.name;
+    const cu = this.beliefs.cultures[e.culture[i]!];
+    if (cu) extra['unit.culture'] = cu.name;
+    const re = this.beliefs.religions[e.religion[i]!];
+    if (re) extra['unit.religion'] = re.name;
     this.cardExtra(i, extra);
     card.extra = extra;
     return card;
@@ -573,6 +612,7 @@ export class Simulation {
     this.rng.setState(meta.rng);
     for (const s of this.systems) s.load?.(r);
     this.loadExtra(r);
+    this.setLayer(0);
     w.markAllDirty();
     this.lutDirty = true;
   }
@@ -601,6 +641,6 @@ export class Simulation {
   }
 
   protected extraHash(): number {
-    return (this.creatures.hash() ^ this.cities.hash() ^ this.kingdomSys.hash() ^ this.diplomacy.hash()) >>> 0;
+    return (this.creatures.hash() ^ this.cities.hash() ^ this.kingdomSys.hash() ^ this.diplomacy.hash() ^ this.beliefs.hash()) >>> 0;
   }
 }
