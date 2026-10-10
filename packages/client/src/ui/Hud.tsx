@@ -12,7 +12,7 @@ export function Hud({ session }: { session: GameSession; onOpen: (p: string) => 
   return (
     <div class="chip" data-testid="hud-stats">
       <span>
-        {t('hud.year', { y: s.year + 1 })}, {t('season.' + s.season)} {t('hud.day', { d: (s.day % 2) + 1 })}
+        {t('hud.year', { y: s.year + 1 })}, {t('season.' + s.season)} {t('hud.day', { d: s.day + 1 })}
       </span>
       <span title={t(WEATHER[s.weather] ?? 'weather.clear')}>{['☀', '🌧', '🌨', '⛈'][s.weather] ?? '☀'}</span>
       {s.worldAge !== 'calm' && (

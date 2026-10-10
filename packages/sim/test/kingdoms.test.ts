@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Simulation, TICKS_PER_DAY, TICKS_PER_YEAR, Mat, Biome, SPECIES_INDEX, Obj, EFlag } from '../src/index.ts';
+import { Simulation, TICKS_PER_PULSE, TICKS_PER_YEAR, Mat, Biome, SPECIES_INDEX, Obj, EFlag } from '../src/index.ts';
 
 function plains(seed: string): Simulation {
   const s = new Simulation({ seed, size: 'small', laws: { startPeoples: false } });
@@ -28,13 +28,13 @@ describe('kingdoms', () => {
     const k = s.kingdomSys.get(c.kingdom)!;
     expect(k).toBeTruthy();
     expect(k.capital).toBe(c.id);
-    for (let t = 0; t < TICKS_PER_DAY * 2; t++) s.step();
+    for (let t = 0; t < TICKS_PER_PULSE * 2; t++) s.step();
     const ri = s.creatures.e.index(k.ruler);
     expect(ri).toBeGreaterThanOrEqual(0);
     expect(s.creatures.e.flags[ri]! & EFlag.Ruler).toBeTruthy();
     expect(k.treasury).toBeGreaterThan(0);
     s.creatures.die(ri, -1, 'test');
-    for (let t = 0; t < TICKS_PER_DAY; t++) s.step();
+    for (let t = 0; t < TICKS_PER_PULSE; t++) s.step();
     expect(s.creatures.e.index(k.ruler)).toBeGreaterThanOrEqual(0);
     expect(k.rulers).toBe(2);
   });
@@ -48,7 +48,7 @@ describe('kingdoms', () => {
     expect(b.kingdom).toBe(k.id);
     b.loyalty = 0.01;
     b.happiness = 0;
-    for (let t = 0; t < TICKS_PER_DAY * 6 && b.kingdom === k.id; t++) {
+    for (let t = 0; t < TICKS_PER_PULSE * 6 && b.kingdom === k.id; t++) {
       b.loyalty = 0.01;
       s.step();
     }

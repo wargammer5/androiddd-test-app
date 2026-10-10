@@ -16,6 +16,7 @@ const unlock = () => {
   audio.setMood('menu');
 };
 window.addEventListener('pointerdown', unlock, { capture: true });
+if (platform.name === 'android') unlock();
 window.addEventListener('keydown', unlock, { capture: true });
 window.addEventListener(
   'click',

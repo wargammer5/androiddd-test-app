@@ -374,7 +374,7 @@ export class GameSession {
 
 export function dayLight(phase: number): number {
   const s = Math.sin(phase * Math.PI * 2 - Math.PI / 2) * 0.5 + 0.5;
-  return Math.min(1, 0.3 + s * 1.1);
+  return Math.min(1, 0.3 + s * 1.6);
 }
 
 function seasonTint(season: number): number {

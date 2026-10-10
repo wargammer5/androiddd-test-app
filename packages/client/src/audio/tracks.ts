@@ -11,6 +11,8 @@ interface Slot {
   gain: GainNode;
   list: string[];
   idx: number;
+  url: string | null;
+  ready: Promise<void> | null;
 }
 
 export class MusicTracks {
@@ -61,20 +63,19 @@ export class MusicTracks {
     if (!list.length) return null;
     const el = new Audio();
     el.preload = 'auto';
-    el.crossOrigin = 'anonymous';
     const src = this.ctx.createMediaElementSource(el);
     const gain = this.ctx.createGain();
     gain.gain.value = 0;
     src.connect(gain).connect(this.dest);
-    s = { el, gain, list, idx: Math.floor(Math.random() * list.length) };
-    el.src = this.base + list[s.idx]!;
+    s = { el, gain, list, idx: Math.floor(Math.random() * list.length), url: null, ready: null };
     const slot = s;
+    slot.ready = this.load(slot);
     el.addEventListener('ended', () => {
       slot.idx = (slot.idx + 1) % slot.list.length;
-      slot.el.src = this.base + slot.list[slot.idx]!;
-      void slot.el.play().catch(() => undefined);
+      slot.ready = this.load(slot).then(() => {
+        if (this.current === g) return this.start(slot);
+      });
     });
-    el.addEventListener('error', () => this.fail());
     this.slots.set(g, s);
     return s;
   }
@@ -97,10 +98,32 @@ export class MusicTracks {
     if (!s) return;
     s.gain.gain.cancelScheduledValues(t);
     s.gain.gain.setTargetAtTime(1, t, FADE_S / 3);
-    void s.el.play().catch((e: unknown) => {
+    void s.ready?.then(() => {
+      if (this.current === next) return this.start(s);
+    });
+  }
+
+  private async load(s: Slot): Promise<void> {
+    try {
+      const r = await fetch(this.base + s.list[s.idx]!);
+      if (!r.ok) throw new Error('music ' + r.status);
+      const blob = await r.blob();
+      if (s.url) URL.revokeObjectURL(s.url);
+      s.url = URL.createObjectURL(blob.type ? blob : new Blob([blob], { type: 'audio/ogg' }));
+      s.el.src = s.url;
+    } catch {
+      this.fail();
+    }
+  }
+
+  private async start(s: Slot): Promise<void> {
+    if (this.failed) return;
+    try {
+      await s.el.play();
+    } catch (e) {
       if (e instanceof DOMException && e.name === 'NotAllowedError') return;
       this.fail();
-    });
+    }
   }
 
   private fail(): void {
@@ -120,14 +143,15 @@ export class MusicTracks {
   }
 
   resume(): void {
-    if (this.current) void this.slots.get(this.current)?.el.play().catch(() => undefined);
+    const s = this.current ? this.slots.get(this.current) : undefined;
+    if (s && s.el.paused) void s.ready?.then(() => this.start(s));
   }
 
   dispose(): void {
     clearInterval(this.timer);
     for (const s of this.slots.values()) {
       s.el.pause();
-      s.el.src = '';
+      if (s.url) URL.revokeObjectURL(s.url);
     }
     this.slots.clear();
     this.current = null;

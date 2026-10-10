@@ -3,7 +3,7 @@ import type { Simulation, System } from './sim.ts';
 import type { SaveReader, SaveWriter } from './save.ts';
 import type { City } from './cities.ts';
 import { Rng, hashString } from './rng.ts';
-import { TICKS_PER_DAY } from './time.ts';
+import { TICKS_PER_PULSE } from './time.ts';
 import { hsl } from './kingdoms.ts';
 import { lutSet, LUT_CULTURE, LUT_RELIGION } from './palette.ts';
 
@@ -231,7 +231,7 @@ export class Beliefs implements System {
   }
 
   step(sim: Simulation): void {
-    if (sim.tick % TICKS_PER_DAY !== 150) return;
+    if (sim.tick % TICKS_PER_PULSE !== 150) return;
     const cs = sim.cities.cities.filter((c) => c.alive);
     for (const c of this.cultures) {
       c.members = 0;
@@ -253,8 +253,8 @@ export class Beliefs implements System {
         re.followers += c.pop;
       }
     }
-    for (const c of this.cultures) if (c.alive && c.cities === 0 && sim.tick - c.founded > TICKS_PER_DAY * 4) c.alive = false;
-    for (const r of this.religions) if (r.alive && r.cities === 0 && sim.tick - r.founded > TICKS_PER_DAY * 4) r.alive = false;
+    for (const c of this.cultures) if (c.alive && c.cities === 0 && sim.tick - c.founded > TICKS_PER_PULSE * 4) c.alive = false;
+    for (const r of this.religions) if (r.alive && r.cities === 0 && sim.tick - r.founded > TICKS_PER_PULSE * 4) r.alive = false;
     for (const c of cs) {
       this.spreadCulture(c, cs);
       if (sim.laws.religions) this.spreadReligion(c, cs);

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Simulation, Mat, Biome, Obj, plantObj, isPlant, plantStage, TICKS_PER_YEAR, TICKS_PER_DAY, SPECIES_INDEX } from '../src/index.ts';
+import { Simulation, Mat, Biome, Obj, plantObj, isPlant, plantStage, TICKS_PER_YEAR, TICKS_PER_PULSE, SPECIES_INDEX } from '../src/index.ts';
 
 function flat(seed: string, biome = Biome.Forest): Simulation {
   const s = new Simulation({ seed, size: 'small', laws: { startPeoples: false } });
@@ -70,8 +70,8 @@ describe('plants', () => {
 describe('seasons and weather', () => {
   it('winter is colder than summer', () => {
     const s = flat('season');
-    const summer = s.nature.seasonOffset(TICKS_PER_DAY * 2 + 10);
-    const winter = s.nature.seasonOffset(TICKS_PER_DAY * 6 + 10);
+    const summer = s.nature.seasonOffset(TICKS_PER_PULSE * 2 + 10);
+    const winter = s.nature.seasonOffset(TICKS_PER_PULSE * 6 + 10);
     expect(winter).toBeLessThan(summer - 8);
   });
 

@@ -7,7 +7,7 @@ import { Rng } from './rng.ts';
 import { placeName } from './names.ts';
 import { LUT_KINGDOM, LUT_UNIT, lutSet } from './palette.ts';
 import { EFlag, Task } from './entities.ts';
-import { TICKS_PER_DAY } from './time.ts';
+import { TICKS_PER_PULSE } from './time.ts';
 import { Mat, Biome } from './world.ts';
 import { Mover, passable } from './pathfind.ts';
 import { TRAIT_INDEX } from './creatures.ts';
@@ -160,7 +160,7 @@ export class KingdomSystem implements System {
   step(sim: Simulation): void {
     const tick = sim.tick;
     if (tick % 24 === 5) this.expeditionStep();
-    if (tick % TICKS_PER_DAY !== 90) return;
+    if (tick % TICKS_PER_PULSE !== 90) return;
     for (const k of this.kingdoms) {
       if (!k.alive) continue;
       k.cities = k.cities.filter((c) => {
@@ -391,7 +391,7 @@ export class KingdomSystem implements System {
         if (shore !== null) target = shore;
       }
       const arrived = dist < 4 || (x.sea && Math.hypot(e.x[lead]! - (target % w.w), e.y[lead]! - Math.floor(target / w.w)) < 2);
-      const timeout = sim.tick - x.started > TICKS_PER_DAY * 6;
+      const timeout = sim.tick - x.started > TICKS_PER_PULSE * 6;
       if (arrived || timeout) {
         for (const i of alive) {
           if (e.flags[i]! & EFlag.Boat) {

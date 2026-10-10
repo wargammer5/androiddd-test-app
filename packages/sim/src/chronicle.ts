@@ -2,7 +2,7 @@ import { species as SPECIES } from '@sotv/content';
 import type { Simulation, System } from './sim.ts';
 import type { SaveReader, SaveWriter } from './save.ts';
 import type { SimEvent } from './protocol.ts';
-import { TICKS_PER_DAY } from './time.ts';
+import { TICKS_PER_PULSE } from './time.ts';
 
 export interface Sample {
   tick: number;
@@ -33,7 +33,7 @@ export class Chronicle implements System {
   }
 
   step(sim: Simulation): void {
-    if (sim.tick % (TICKS_PER_DAY / 2) !== 0) return;
+    if (sim.tick % (TICKS_PER_PULSE / 2) !== 0) return;
     if (sim.layerMode === 2 || sim.layerMode === 3 || sim.layerMode === 6) sim.setLayer(sim.layerMode, false);
     const cr = sim.creatures;
     let pop = 0;

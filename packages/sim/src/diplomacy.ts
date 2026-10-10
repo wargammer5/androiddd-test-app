@@ -5,7 +5,7 @@ import type { Kingdom } from './kingdoms.ts';
 import type { City } from './cities.ts';
 import { Job } from './cities.ts';
 import { Rng } from './rng.ts';
-import { TICKS_PER_DAY, TICKS_PER_YEAR } from './time.ts';
+import { TICKS_PER_PULSE, TICKS_PER_YEAR } from './time.ts';
 import { EFlag, Task, Anim } from './entities.ts';
 import { placeName } from './names.ts';
 import { Bld } from './objects.ts';
@@ -134,7 +134,7 @@ export class Diplomacy implements System {
   step(sim: Simulation): void {
     const tick = sim.tick;
     if (tick % 24 === 11) this.sieges();
-    if (tick % TICKS_PER_DAY !== 120) return;
+    if (tick % TICKS_PER_PULSE !== 120) return;
     this.atWarCache.clear();
     const ks = sim.kingdomSys.kingdoms.filter((k) => k.alive);
     this.clansDaily();

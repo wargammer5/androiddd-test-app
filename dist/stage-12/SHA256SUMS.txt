@@ -1,3 +1,3 @@
-3969252c255f6cd60f05c72b86aaf14fde43b9147ad9d05be55b251ed1d199ce  Sotvorenie-v1.1.0-release.apk
-a2cdda03c96a7ed77f3afe90cbb010f6cd25d2434548249237b6ebafb641af7b  Sotvorenie-v1.1.0-stage12.apk
-8004a337f7fbc5751ec55f77ad0ad37754eff95765be4270732bba5471a6a7e5  Sotvorenie-v1.1.0.aab
+3fa59d19057877908ed12fd8f1d89d8fc64fe0b1af098cd2dc9012e810c8d10d  Sotvorenie-v1.1.1-release.apk
+e8133bb410ec4e4d05f6bfee9c41a8515763c0f726ad00e11deb38acc332139d  Sotvorenie-v1.1.1-stage12.apk
+7cb7f8be43e1a14093d99fd5c90482987c0db320d4e5f7cb53e4d526cc828147  Sotvorenie-v1.1.1.aab
