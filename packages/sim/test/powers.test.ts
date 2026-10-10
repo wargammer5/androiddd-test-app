@@ -150,3 +150,23 @@ describe('monsters and special powers', () => {
     expect(POWERS.size).toBeGreaterThan(50);
   });
 });
+
+import { strings } from '@sotv/content';
+import { TENETS, CULTURE_TRAITS, JOB_COUNT, TASK_COUNT, DEFAULT_LAWS, LAW_PROFILES } from '../src/index.ts';
+
+describe('dynamic translation keys', () => {
+  it('exist for powers, ages, jobs, tasks, tenets, traits, laws and profiles', () => {
+    const keys: string[] = [];
+    for (const p of POWERS.values()) if (p.icon) keys.push('power.' + p.id);
+    for (const a of AGES) keys.push('age.' + a);
+    for (let j = 0; j < JOB_COUNT; j++) keys.push('job.' + j);
+    for (let t = 0; t < TASK_COUNT; t++) keys.push('task.' + t);
+    for (const t of TENETS) keys.push('tenet.' + t);
+    for (const t of CULTURE_TRAITS) keys.push('ctrait.' + t);
+    for (const k of Object.keys(DEFAULT_LAWS)) if (k !== 'godPowers' && k !== 'ecosystem') keys.push('law.' + k);
+    for (const k of Object.keys(LAW_PROFILES)) keys.push('profile.' + k);
+    for (const k of ['border', 'conquest', 'rebellion', 'plot', 'religion']) keys.push('cause.' + k);
+    const missing = keys.filter((k) => !strings.ru[k] || !strings.en[k]);
+    expect(missing).toEqual([]);
+  });
+});

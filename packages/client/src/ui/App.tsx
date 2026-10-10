@@ -7,6 +7,7 @@ import { NewWorld } from './NewWorld.tsx';
 import { About } from './About.tsx';
 import { SettingsScreen } from './SettingsScreen.tsx';
 import { GameScreen } from './GameScreen.tsx';
+import { ErrorBoundary } from './ErrorBoundary.tsx';
 import type { NewWorldParams } from '@sotv/sim';
 import { audio } from '../audio/engine.ts';
 
@@ -61,6 +62,10 @@ export function App() {
     });
   }, [screen.id]);
   const go = (sc: Screen) => setScreen(sc);
+  return <ErrorBoundary onReset={() => setScreen({ id: 'menu' })}>{renderScreen(screen, go)}</ErrorBoundary>;
+}
+
+function renderScreen(screen: Screen, go: (s: Screen) => void) {
   switch (screen.id) {
     case 'menu':
       return <MainMenu go={go} />;

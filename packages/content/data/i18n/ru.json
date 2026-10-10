@@ -593,5 +593,11 @@
   "settings.sound": "Звук",
   "settings.musicVol": "Музыка",
   "settings.sfxVol": "Эффекты",
-  "settings.ambientVol": "Окружение"
+  "settings.ambientVol": "Окружение",
+  "crash.title": "Что-то пошло не так",
+  "crash.text": "Произошла ошибка интерфейса. Мир сохраняется автоматически, можно вернуться в меню и продолжить.",
+  "crash.none": "Сбоев не было",
+  "crash.count": "Отчётов о сбоях: {n}",
+  "crash.export": "Экспорт",
+  "crash.clear": "Очистить"
 }

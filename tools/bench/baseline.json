@@ -1,22 +1,27 @@
 {
   "large-world": {
-    "msPerTick": 1.8406436033333375,
+    "msPerTick": 1.7279039566666567,
     "entities": 1259,
-    "maxMs": 4.393672999998671
+    "maxMs": 5.011844000000565
   },
   "medium-world": {
-    "msPerTick": 0.7834219600000021,
+    "msPerTick": 0.7273414666666698,
     "entities": 601,
-    "maxMs": 3.0643639999980223
+    "maxMs": 2.791244000000006
   },
   "large-substances": {
-    "msPerTick": 1.6929516499999833,
+    "msPerTick": 1.6336573300000115,
     "entities": 1384,
-    "maxMs": 4.374292000000423
+    "maxMs": 5.574549999997544
   },
   "large-3000": {
-    "msPerTick": 3.1607940366666782,
+    "msPerTick": 2.974738750000009,
     "entities": 2586,
-    "maxMs": 9.493259000002581
+    "maxMs": 8.495223999998416
+  },
+  "huge-world": {
+    "msPerTick": 2.7839725049999835,
+    "entities": 2382,
+    "maxMs": 5.433134000006248
   }
 }

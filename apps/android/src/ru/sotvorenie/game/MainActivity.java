@@ -46,9 +46,29 @@ public class MainActivity extends Activity {
     int pendingExportCb;
     int pendingImportCb;
 
+    void installCrashHandler() {
+        final Thread.UncaughtExceptionHandler prev = Thread.getDefaultUncaughtExceptionHandler();
+        final java.io.File out = new java.io.File(getFilesDir(), "crash.txt");
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                try {
+                    java.io.StringWriter sw = new java.io.StringWriter();
+                    e.printStackTrace(new java.io.PrintWriter(sw));
+                    java.io.FileOutputStream fo = new java.io.FileOutputStream(out);
+                    fo.write(sw.toString().getBytes("UTF-8"));
+                    fo.close();
+                } catch (Throwable ignored) {
+                }
+                if (prev != null) prev.uncaughtException(t, e);
+            }
+        });
+    }
+
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
+        installCrashHandler();
         Window w = getWindow();
         w.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         w.setStatusBarColor(Color.BLACK);
@@ -298,6 +318,21 @@ public class MainActivity extends Activity {
             return "{\"memMb\":" + (mi.totalMem / (1024 * 1024)) + ",\"cores\":" + cores + ",\"sdk\":" + Build.VERSION.SDK_INT
                 + ",\"lowRam\":" + am.isLowRamDevice() + ",\"heapMb\":" + am.getLargeMemoryClass()
                 + ",\"safe\":[" + (ins[0] / d) + "," + (ins[1] / d) + "," + (ins[2] / d) + "," + (ins[3] / d) + "]}";
+        }
+
+        @JavascriptInterface
+        public String lastCrash() {
+            java.io.File f = new java.io.File(getFilesDir(), "crash.txt");
+            if (!f.exists()) return "";
+            try {
+                java.io.FileInputStream fi = new java.io.FileInputStream(f);
+                byte[] b = readAll(fi);
+                fi.close();
+                f.delete();
+                return new String(b, "UTF-8");
+            } catch (Throwable t) {
+                return "";
+            }
         }
 
         @JavascriptInterface

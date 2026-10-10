@@ -593,5 +593,11 @@
   "settings.sound": "Sound",
   "settings.musicVol": "Music",
   "settings.sfxVol": "Effects",
-  "settings.ambientVol": "Ambience"
+  "settings.ambientVol": "Ambience",
+  "crash.title": "Something went wrong",
+  "crash.text": "An interface error occurred. The world is autosaved, you can return to the menu and continue.",
+  "crash.none": "No crashes recorded",
+  "crash.count": "Crash reports: {n}",
+  "crash.export": "Export",
+  "crash.clear": "Clear"
 }

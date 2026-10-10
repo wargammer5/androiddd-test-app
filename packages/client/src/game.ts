@@ -7,6 +7,7 @@ import { Store } from './store.ts';
 import { settings } from './settings.ts';
 import { platform } from './platform/index.ts';
 import { Timelapse } from './timelapse.ts';
+import { logCrash } from './crashlog.ts';
 import { Particles, BURSTS, POWER_BURST, EVENT_BURST } from './render/particles.ts';
 
 export interface ToolState {
@@ -45,6 +46,7 @@ export class GameSession {
   private hidden = false;
   private savedSpeed = 1;
   private frameTimes: number[] = [];
+  private frameCounter = 0;
   readonly fps = new Store<number>(0);
   private startTime = performance.now();
   private onFrameHooks: ((s: FrameStats) => void)[] = [];
@@ -55,7 +57,10 @@ export class GameSession {
   constructor() {
     this.worker = new Worker(new URL('./worker/sim.worker.ts', import.meta.url), { type: 'module' });
     this.worker.onmessage = (e: MessageEvent<FromWorker>) => this.onMessage(e.data);
-    this.worker.onerror = (e) => this.errors.update((l) => [...l, String(e.message)]);
+    this.worker.onerror = (e) => {
+      logCrash('worker', String(e.message));
+      this.errors.update((l) => [...l, String(e.message)]);
+    };
     this.overlay.subscribe((mode) => this.send({ t: 'layer', mode }));
     platform.onPause(() => {
       this.hidden = true;
@@ -160,7 +165,8 @@ export class GameSession {
         break;
       }
       case 'error':
-        console.error(m.message);
+        logCrash('worker', m.message);
+        console.warn(m.message);
         this.errors.update((l) => [...l, m.message].slice(-20));
         break;
     }
@@ -268,13 +274,39 @@ export class GameSession {
     this.sendView(true);
   }
 
+  readonly autoDrop = new Store<number>(0);
+  private slowSince = 0;
+  private fastSince = 0;
+
   qualityLevel(): number {
     const q = settings.get().quality;
     if (q === 'low') return 0;
     if (q === 'medium') return 1;
     if (q === 'high') return 2;
     const dc = platform.deviceClass();
-    return dc === 'low' ? 0 : dc === 'mid' ? 1 : 2;
+    const base = dc === 'low' ? 0 : dc === 'mid' ? 1 : 2;
+    return Math.max(0, base - this.autoDrop.get());
+  }
+
+  private adaptQuality(now: number): void {
+    if (settings.get().quality !== 'auto' || document.hidden) return;
+    const fps = this.frameTimes.length;
+    const target = settings.get().batterySaver ? 30 : settings.get().fpsLimit;
+    if (fps < Math.min(24, target * 0.75)) {
+      this.fastSince = 0;
+      if (!this.slowSince) this.slowSince = now;
+      else if (now - this.slowSince > 6000 && this.autoDrop.get() < 2) {
+        this.autoDrop.set(this.autoDrop.get() + 1);
+        this.slowSince = 0;
+      }
+    } else if (fps > target * 0.9) {
+      this.slowSince = 0;
+      if (!this.fastSince) this.fastSince = now;
+      else if (now - this.fastSince > 45000 && this.autoDrop.get() > 0) {
+        this.autoDrop.set(this.autoDrop.get() - 1);
+        this.fastSince = 0;
+      }
+    }
   }
 
   private frame(now: number): void {
@@ -289,6 +321,7 @@ export class GameSession {
     this.frameTimes.push(now);
     while (this.frameTimes.length && now - this.frameTimes[0]! > 1000) this.frameTimes.shift();
     if (this.frameTimes.length % 10 === 0) this.fps.set(this.frameTimes.length);
+    if ((this.frameCounter = (this.frameCounter + 1) % 30) === 0) this.adaptQuality(now);
     const q = this.qualityLevel();
     const dprMax = q === 0 ? 1 : q === 1 ? 1.5 : 2;
     const dpr = Math.min(window.devicePixelRatio || 1, dprMax);

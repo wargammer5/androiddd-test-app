@@ -1,7 +1,7 @@
 import { deflateSync, inflateSync, strToU8, strFromU8 } from 'fflate';
 
 export const SAVE_MAGIC = 0x56544f53;
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 const CRC = new Int32Array(256).map((_, n) => {
   let c = n;
@@ -124,11 +124,46 @@ export class SaveReader {
 
 export type Migration = (r: SaveReader) => void;
 
-export const MIGRATIONS: Record<number, Migration> = {};
+export const MIGRATIONS: Record<number, Migration> = {
+  1: (r) => {
+    const mat = r.raw('L.mat');
+    const depth = r.raw('L.depth');
+    if (!r.has('L.still') && mat && depth) {
+      const still = new Uint8Array(mat.length);
+      for (let i = 0; i < mat.length; i++) if ((mat[i] === 1 || mat[i] === 5) && depth[i]! > 0) still[i] = 1;
+      r.sections.set('L.still', still);
+    }
+    if (r.has('META')) {
+      const meta = r.json<Record<string, unknown>>('META');
+      const laws = (meta.laws ?? {}) as Record<string, unknown>;
+      if (laws.worldAges === undefined) laws.worldAges = true;
+      if (laws.eventFrequency === undefined) laws.eventFrequency = 1;
+      meta.laws = laws;
+      meta.v = 2;
+      r.sections.set('META', strToU8(JSON.stringify(meta)));
+    }
+  },
+};
 
-export function migrate(r: SaveReader): void {
+export function migrate(r: SaveReader): number {
+  let applied = 0;
   for (let v = r.version; v < SAVE_VERSION; v++) {
     const m = MIGRATIONS[v];
-    if (m) m(r);
+    if (m) {
+      m(r);
+      applied++;
+    }
   }
+  return applied;
+}
+
+export function downgradeForTest(bytes: Uint8Array, version: number, drop: string[]): Uint8Array {
+  const r = new SaveReader(bytes);
+  const w = new SaveWriter();
+  for (const [tag, data] of r.sections) if (!drop.includes(tag)) w.array(tag, data);
+  const out = w.finish();
+  const dv = new DataView(out.buffer);
+  dv.setUint16(4, version, true);
+  dv.setUint32(8, crc32(out, 12), true);
+  return out;
 }
