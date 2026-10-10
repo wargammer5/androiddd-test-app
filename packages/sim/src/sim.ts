@@ -12,6 +12,7 @@ import { Creatures } from './creatures.ts';
 import { Nature, placePlants } from './nature.ts';
 import { CitySystem, type City } from './cities.ts';
 import { KingdomSystem, type Kingdom } from './kingdoms.ts';
+import { Diplomacy } from './diplomacy.ts';
 import { traits as TRAITS } from '@sotv/content';
 import { buildings as BUILDINGS, economy as ECONOMY } from '@sotv/content';
 const ECON_RES = ECONOMY.resources;
@@ -51,6 +52,7 @@ export class Simulation {
   nature!: Nature;
   cities!: CitySystem;
   kingdomSys!: KingdomSystem;
+  diplomacy!: Diplomacy;
   startPeoples = true;
 
   constructor(params: NewWorldParams, skipGen = false) {
@@ -100,8 +102,9 @@ export class Simulation {
     this.nature = new Nature(this);
     this.cities = new CitySystem(this);
     this.kingdomSys = this.makeKingdoms();
+    this.diplomacy = new Diplomacy(this);
     this.creatures.civ = this.cities;
-    this.systems.push(this.substances, this.nature, this.cities, this.kingdomSys, this.creatures);
+    this.systems.push(this.substances, this.nature, this.cities, this.kingdomSys, this.diplomacy, this.creatures);
   }
 
   protected makeKingdoms(): KingdomSystem {
@@ -111,26 +114,52 @@ export class Simulation {
   onCityFounded(c: City, k?: Kingdom): void {
     if (k && k.alive) this.kingdomSys.assignCity(c, k);
     else this.kingdomSys.create(c);
+    const e = this.creatures.e;
+    const members: number[] = [];
+    for (let i = 0; i < e.high; i++) if (e.alive[i] && e.city[i] === c.id && e.clan[i]! < 0) members.push(i);
+    this.diplomacy.newClans(members, this.kingdomSys.get(c.kingdom));
+  }
+
+  onCivBirth(child: number, mother: number): void {
+    this.diplomacy.onBirth(child, mother);
+  }
+
+  onUnitKilled(i: number, killer: number): void {
+    this.diplomacy.onDeath(i, killer);
+  }
+
+  relationBonus(_a: Kingdom, _b: Kingdom): number {
+    return 0;
+  }
+
+  warTarget(c: City, i: number): number {
+    return this.diplomacy.warTarget(c, i);
   }
 
   onKingdomCreated(_k: Kingdom, _from?: Kingdom): void {}
 
-  onKingdomFell(_k: Kingdom): void {}
+  onKingdomFell(k: Kingdom): void {
+    this.diplomacy.onKingdomFell(k);
+  }
 
-  onRebellion(_c: City, _from: Kingdom, _to: Kingdom): void {}
+  onRebellion(c: City, from: Kingdom, to: Kingdom): void {
+    this.diplomacy.onRebellion(c, from, to);
+  }
 
-  onNewRuler(_k: Kingdom, _unit: number, _succession: boolean): void {}
+  onNewRuler(k: Kingdom, unit: number, succession: boolean): void {
+    this.diplomacy.onNewRuler(k, unit, succession);
+  }
 
-  findHeir(_k: Kingdom): number {
-    return -1;
+  findHeir(k: Kingdom): number {
+    return this.diplomacy.findHeir(k);
   }
 
   cityExtra(_c: City): Record<string, string | number> {
     return {};
   }
 
-  kingdomExtra(_k: Kingdom): Record<string, string | number> {
-    return {};
+  kingdomExtra(k: Kingdom): Record<string, string | number> {
+    return this.diplomacy.kingdomExtra(k);
   }
 
   rulerMod(k: Kingdom, key: string): number {
@@ -161,16 +190,18 @@ export class Simulation {
 
   onPrayer(_c: City, _i: number): void {}
 
-  civWorkTarget(_c: City, _i: number): number {
+  civWorkTarget(c: City, i: number): number {
+    if (this.creatures.e.job[i] === 12) return this.diplomacy.traderTarget(c, i);
     return -1;
   }
 
-  civDoWork(_c: City, _i: number, _timer: number): boolean {
+  civDoWork(c: City, i: number, timer: number): boolean {
+    if (this.creatures.e.job[i] === 12) return this.diplomacy.traderWork(c, i, timer);
     return false;
   }
 
-  civHostile(_a: number, _b: number): boolean {
-    return false;
+  civHostile(a: number, b: number): boolean {
+    return this.diplomacy.hostile(a, b);
   }
 
   onUnitDeath(_i: number, _cell: number): void {}
@@ -418,6 +449,8 @@ export class Simulation {
         return this.kingdomSys.info(q.id);
       case 'lists':
         return { kingdoms: this.kingdomSys.list(), cities: this.cities.cities.filter((c) => c.alive).map((c) => ({ id: c.id, name: c.name, pop: c.pop, kingdom: c.kingdom, race: SPECIES[c.race]!.key })), ...this.listsExtra() };
+      case 'diplomacy':
+        return this.diplomacy.info();
       case 'species': {
         return SPECIES.map((d) => ({ key: d.key, kind: d.kind, count: this.creatures.speciesCount[d.id]! }));
       }
@@ -445,6 +478,8 @@ export class Simulation {
     const k = this.kingdomSys.get(e.kingdom[i]!);
     if (k) extra['cell.kingdom'] = k.name;
     if (k && k.ruler === e.id(i)) extra['unit.title'] = 'unit.ruler';
+    const clan = this.diplomacy.clans[e.clan[i]!];
+    if (clan) extra['unit.clan'] = clan.name;
     this.cardExtra(i, extra);
     card.extra = extra;
     return card;
@@ -566,6 +601,6 @@ export class Simulation {
   }
 
   protected extraHash(): number {
-    return (this.creatures.hash() ^ this.cities.hash() ^ this.kingdomSys.hash()) >>> 0;
+    return (this.creatures.hash() ^ this.cities.hash() ^ this.kingdomSys.hash() ^ this.diplomacy.hash()) >>> 0;
   }
 }

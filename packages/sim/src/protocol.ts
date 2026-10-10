@@ -44,6 +44,7 @@ export type Query =
   | { kind: 'religion'; id: number }
   | { kind: 'clan'; id: number }
   | { kind: 'lists' }
+  | { kind: 'diplomacy' }
   | { kind: 'history' }
   | { kind: 'stats' }
   | { kind: 'species' }

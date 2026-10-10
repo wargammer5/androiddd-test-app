@@ -18,3 +18,4 @@ export * from './cities.ts';
 export * from './kingdoms.ts';
 export * from './nature.ts';
 export * from './substances.ts';
+export * from './diplomacy.ts';

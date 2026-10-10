@@ -21,6 +21,8 @@ export function fuelOf(w: World, i: number): number {
   if (isBuilding(o)) return 10;
   if (o === Obj.FieldGrowing || o === Obj.FieldRipe) return 3;
   if (o === Obj.Bridge || o === Obj.Wreck) return 6;
+  if (o === Obj.Ash || o === Obj.Burnt || o === Obj.Ruins || o === Obj.Crater || o === Obj.Bones || o === Obj.Tomb) return 0;
+  if (o === Obj.Stump || o === Obj.Scaffold) return 2;
   const b = w.biome[i]!;
   if (b === Biome.Plains || b === Biome.Savanna || b === Biome.Forest || b === Biome.Jungle || b === Biome.Magic) return w.moist[i]! > 200 ? 0 : 1;
   return 0;
@@ -159,7 +161,7 @@ export class Substances implements System {
     }
     switch (m) {
       case Mat.Water: {
-        if (heat > 100 || (heat > 38 && d === 1 && (hash2(i, tick, 11) & 255) < 3)) {
+        if (heat > 100 || (heat > 38 && d === 1 && w.biome[i] !== Biome.Sea && (hash2(i, tick, 11) & 255) < 3)) {
           w.depth[i] = d - 1;
           if (d - 1 === 0) w.mat[i] = Mat.None;
           w.heat[i] = heat - 6;
@@ -169,9 +171,9 @@ export class Substances implements System {
           w.mat[i] = Mat.Ice;
           return true;
         }
-        if (w.biome[i] === Biome.Sea && w.height[i]! < SEA_LEVEL && w.height[i]! + d < SEA_LEVEL) {
+        if (w.biome[i] === Biome.Sea && w.height[i]! < SEA_LEVEL && w.height[i]! + d !== SEA_LEVEL) {
           w.depth[i] = SEA_LEVEL - w.height[i]!;
-          changed = true;
+          return true;
         }
         if (w.fire[i]! > 0) {
           w.fire[i] = 0;
@@ -196,7 +198,7 @@ export class Substances implements System {
         if (w.obj[i] !== Obj.Vent && w.obj[i] !== 0) {
           const o = w.obj[i]!;
           if (fuelOf(w, i) > 0) this.hooks?.onBurnObject(i, o);
-          w.obj[i] = isOre(o) ? o : 0;
+          w.obj[i] = isOre(o) ? o : isTree(o) ? Obj.Burnt : isBuilding(o) ? Obj.Ruins : o === Obj.Burnt || o === Obj.Ruins ? o : Obj.Ash;
           changed = true;
         }
         if (w.obj[i] === Obj.Vent) {
@@ -298,8 +300,8 @@ export class Substances implements System {
     if (best < 0) return false;
     const diff = s - bestS;
     if (diff < minDiff) return false;
-    let amt = Math.min(d, Math.max(1, diff >> 1));
-    if (diff === 1 && d < 2) return false;
+    if (diff < 2) return false;
+    let amt = Math.min(d, diff >> 1);
     if (amt <= 0) return false;
     if (w.mat[best] !== m) {
       w.mat[best] = m;

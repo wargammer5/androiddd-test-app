@@ -535,3 +535,13 @@ a.link {
     width: 28vw;
   }
 }
+.side-panel.wide {
+  width: min(420px, calc(100vw - 12px));
+}
+.card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin: 6px 0;
+  background: rgba(255, 255, 255, 0.02);
+}

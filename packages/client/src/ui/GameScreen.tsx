@@ -16,9 +16,11 @@ import { Confirm } from './Confirm.tsx';
 import { extraPanels } from './panels.ts';
 import { Layers } from './Layers.tsx';
 import { KingdomList } from './KingdomList.tsx';
+import { DiplomacyPanel } from './DiplomacyPanel.tsx';
 import { registerPanel } from './panels.ts';
 
 registerPanel('kingdoms', KingdomList);
+registerPanel('diplomacy', DiplomacyPanel);
 
 export let currentSession: GameSession | null = null;
 
@@ -128,6 +130,9 @@ export function GameScreen({ params, load, exit }: { params?: NewWorldParams; lo
             <span class="spacer" />
             <button onClick={() => setPanel((p) => (p === 'kingdoms' ? null : 'kingdoms'))} data-testid="btn-kingdoms" aria-label="kingdoms">
               👑
+            </button>
+            <button onClick={() => setPanel((p) => (p === 'diplomacy' ? null : 'diplomacy'))} data-testid="btn-diplomacy" aria-label="diplomacy">
+              ⚔
             </button>
             <Layers session={session} available={[0, 1, 4, 5]} />
             <button onClick={() => setMini((v) => !v)} aria-label="minimap">

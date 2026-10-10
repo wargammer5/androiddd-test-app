@@ -112,6 +112,7 @@ describe('lava', () => {
     const a = w.idx(89, 90);
     w.mat[a] = Mat.Lava;
     w.depth[a] = 3;
+    w.heat[a] = 200;
     w.wake(a);
     for (let i = 0; i < 200; i++) s.step();
     let burnt = 0;
