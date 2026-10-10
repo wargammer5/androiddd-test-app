@@ -1,7 +1,7 @@
 import type { Simulation, System } from './sim.ts';
 import type { SaveReader, SaveWriter } from './save.ts';
 import { Rng } from './rng.ts';
-import { TICKS_PER_DAY, TICKS_PER_YEAR } from './time.ts';
+import { TICKS_PER_PULSE, TICKS_PER_YEAR, isNight } from './time.ts';
 import { Mat, Biome, SEA_LEVEL } from './world.ts';
 import { Obj, isBuilding, isTree } from './objects.ts';
 import { SPECIES_INDEX } from './creatures.ts';
@@ -86,7 +86,7 @@ export class WorldEvents implements System {
     });
     if (tick % 30 === 7) this.regionEffects();
     if (tick % 60 === 13) this.monsterSpawns();
-    if (tick % TICKS_PER_DAY !== 40) return;
+    if (tick % TICKS_PER_PULSE !== 40) return;
     if (sim.laws.worldAges && tick >= this.ageUntil) this.nextAge();
     this.plagueDaily();
     if (!sim.laws.disasters) return;
@@ -130,7 +130,7 @@ export class WorldEvents implements System {
         const i = x !== undefined ? Math.floor(y!) * w.w + Math.floor(x) : landCell((j) => w.mat[j] === Mat.None && w.biome[j] !== Biome.Snow);
         if (i < 0) return false;
         const [cx, cy] = at(i);
-        this.regions.push({ kind: 'drought', x: cx, y: cy, r: 25 + this.rng.int(30), until: sim.tick + TICKS_PER_DAY * (4 + this.rng.int(5)) });
+        this.regions.push({ kind: 'drought', x: cx, y: cy, r: 25 + this.rng.int(30), until: sim.tick + TICKS_PER_PULSE * (4 + this.rng.int(5)) });
         this.log('drought', 'ev.drought', {}, cx, cy);
         return true;
       }
@@ -139,7 +139,7 @@ export class WorldEvents implements System {
         if (i < 0) i = landCell((j) => w.mat[j] === Mat.None);
         if (i < 0) return false;
         const [cx, cy] = at(i);
-        this.regions.push({ kind: 'flood', x: cx, y: cy, r: 12 + this.rng.int(12), until: sim.tick + TICKS_PER_DAY * 2 });
+        this.regions.push({ kind: 'flood', x: cx, y: cy, r: 12 + this.rng.int(12), until: sim.tick + TICKS_PER_PULSE * 2 });
         this.log('flood', 'ev.flood', {}, cx, cy);
         return true;
       }
@@ -154,7 +154,7 @@ export class WorldEvents implements System {
         const c = x !== undefined ? sim.cities.city((w.zone[Math.floor(y!) * w.w + Math.floor(x)] ?? 0) - 1) : pickCity();
         if (!c) return false;
         c.store.spoil('food', 0.7, 'famine');
-        this.famine.set(c.id, sim.tick + TICKS_PER_DAY * 3);
+        this.famine.set(c.id, sim.tick + TICKS_PER_PULSE * 3);
         this.log('famine', 'ev.famine', { city: c.name }, c.center % w.w, Math.floor(c.center / w.w));
         return true;
       }
@@ -252,7 +252,7 @@ export class WorldEvents implements System {
     w.depth[c] = 4;
     w.heat[c] = 200;
     w.wake(c, 60);
-    this.vents.push({ cell: c, until: this.sim.tick + TICKS_PER_DAY * 3 });
+    this.vents.push({ cell: c, until: this.sim.tick + TICKS_PER_PULSE * 3 });
   }
 
   impact(cx: number, cy: number, r: number, meteor: boolean): void {
@@ -356,7 +356,7 @@ export class WorldEvents implements System {
     const sim = this.sim;
     if (!sim.laws.disasters) return;
     const m = this.mod('monsters');
-    const night = (sim.tick % TICKS_PER_DAY) / TICKS_PER_DAY > 0.8;
+    const night = isNight(sim.tick);
     if (this.age === 'darkness' && night && this.rng.chance(0.08 * m)) {
       const w = sim.world;
       for (let t = 0; t < 40; t++) {

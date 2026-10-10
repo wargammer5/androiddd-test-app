@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Simulation, SaveReader, SAVE_VERSION, downgradeForTest, Mat, TICKS_PER_DAY } from '../src/index.ts';
+import { Simulation, SaveReader, SAVE_VERSION, downgradeForTest, Mat, TICKS_PER_PULSE } from '../src/index.ts';
 
 describe('save migrations', () => {
   it('current saves carry the current version', () => {
@@ -9,7 +9,7 @@ describe('save migrations', () => {
 
   it('a v1 save without newer sections loads and keeps running', () => {
     const a = new Simulation({ seed: 'mig-1', size: 'small' });
-    for (let t = 0; t < TICKS_PER_DAY; t++) a.step();
+    for (let t = 0; t < TICKS_PER_PULSE; t++) a.step();
     const v1 = downgradeForTest(a.save(), 1, ['L.still', 'CHRN', 'EVNT', 'BELF', 'DIPL', 'SIMX']);
     expect(new SaveReader(v1).version).toBe(1);
     const b = Simulation.load(v1);
@@ -21,7 +21,7 @@ describe('save migrations', () => {
     }
     expect(still).toBe(water);
     expect(b.laws.worldAges).toBe(true);
-    for (let t = 0; t < TICKS_PER_DAY; t++) b.step();
+    for (let t = 0; t < TICKS_PER_PULSE; t++) b.step();
     expect(b.creatures.e.count).toBeGreaterThan(0);
     const again = Simulation.load(b.save());
     expect(again.hash()).toBe(b.hash());

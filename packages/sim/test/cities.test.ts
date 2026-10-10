@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Store, Simulation, TICKS_PER_YEAR, TICKS_PER_DAY, Mat, Biome, SPECIES_INDEX, Obj, Rng } from '../src/index.ts';
+import { Store, Simulation, TICKS_PER_YEAR, TICKS_PER_PULSE, Mat, Biome, SPECIES_INDEX, Obj, Rng } from '../src/index.ts';
 
 describe('store', () => {
   it('spend is atomic and reservations are consistent', () => {
@@ -103,7 +103,7 @@ describe('cities', () => {
     const b = c.buildings.find((x) => !x.done || x.type === 1);
     expect(b).toBeDefined();
     expect(c.store.check()).toEqual([]);
-    for (let t = 0; t < TICKS_PER_DAY * 4; t++) s.step();
+    for (let t = 0; t < TICKS_PER_PULSE * 4; t++) s.step();
     expect(c.store.check()).toEqual([]);
     expect(c.store.totalOut[1]!).toBeGreaterThan(0);
   });
@@ -122,7 +122,7 @@ describe('cities', () => {
     const cell = s.world.idx(Math.floor(e.x[i]!), Math.floor(e.y[i]!));
     s.creatures.die(i, -1, 'test');
     expect(s.cities.drops.get(cell)).toEqual(['wood', 5]);
-    for (let t = 0; t < TICKS_PER_DAY + 2; t++) s.step();
+    for (let t = 0; t < TICKS_PER_PULSE + 2; t++) s.step();
     expect(c.store.totalOut[0]!).toBeGreaterThan(0);
     expect(c.store.get('food')).toBeLessThan(before);
   });

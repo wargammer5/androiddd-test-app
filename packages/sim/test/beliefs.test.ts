@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Simulation, TICKS_PER_DAY, TICKS_PER_YEAR, Mat, Biome, SPECIES_INDEX, Obj, Bld, buildingObj } from '../src/index.ts';
+import { Simulation, TICKS_PER_PULSE, TICKS_PER_YEAR, Mat, Biome, SPECIES_INDEX, Obj, Bld, buildingObj } from '../src/index.ts';
 
 function plains(seed: string): Simulation {
   const s = new Simulation({ seed, size: 'small', laws: { startPeoples: false } });
@@ -120,7 +120,7 @@ describe('religions', () => {
     const b = Simulation.load(a.save());
     expect(b.beliefs.religions.length).toBe(a.beliefs.religions.length);
     expect(b.beliefs.cultures.map((x) => x.name)).toEqual(a.beliefs.cultures.map((x) => x.name));
-    for (let t = 0; t < TICKS_PER_DAY * 2; t++) {
+    for (let t = 0; t < TICKS_PER_PULSE * 2; t++) {
       a.step();
       b.step();
     }

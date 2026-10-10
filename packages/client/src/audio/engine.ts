@@ -60,6 +60,7 @@ export class AudioEngine {
   unlock(): void {
     if (this.started) {
       if (this.ctx?.state === 'suspended') void this.ctx.resume();
+      this.tracks?.resume();
       return;
     }
     const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;

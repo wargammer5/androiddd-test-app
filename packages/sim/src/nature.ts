@@ -3,7 +3,7 @@ import type { Simulation, System } from './sim.ts';
 import type { SaveReader, SaveWriter } from './save.ts';
 import { Biome, Mat, World } from './world.ts';
 import { Rng } from './rng.ts';
-import { calendar, Season } from './time.ts';
+import { calendar, Season, TICKS_PER_YEAR } from './time.ts';
 import { Obj, PLANT_TYPES, Stage, isPlant, plantObj, plantStage, plantType } from './objects.ts';
 import { Mover, passable } from './pathfind.ts';
 
@@ -68,8 +68,7 @@ export class Nature implements System {
   }
 
   seasonOffset(tick: number): number {
-    const c = calendar(tick);
-    const t = c.dayOfYear / 8 + 0.0;
+    const t = (tick % TICKS_PER_YEAR) / TICKS_PER_YEAR;
     const s = Math.floor(t * 4) % 4;
     const frac = t * 4 - Math.floor(t * 4);
     const a = SEASON_TEMP[s]!;

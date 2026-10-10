@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Simulation, TICKS_PER_DAY, Mat, Biome, SPECIES_INDEX, Obj, POWERS, EVENT_KINDS, AGES, isBuilding, Bld } from '../src/index.ts';
+import { Simulation, TICKS_PER_PULSE, Mat, Biome, SPECIES_INDEX, Obj, POWERS, EVENT_KINDS, AGES, isBuilding, Bld } from '../src/index.ts';
 
 function plains(seed: string): Simulation {
   const s = new Simulation({ seed, size: 'small', laws: { startPeoples: false } });
@@ -38,7 +38,7 @@ describe('events and ages', () => {
       const ok = s.events.trigger(k);
       expect(ok, k).toBe(true);
     }
-    for (let t = 0; t < TICKS_PER_DAY; t++) s.step();
+    for (let t = 0; t < TICKS_PER_PULSE; t++) s.step();
     expect(s.events.history.length).toBeGreaterThanOrEqual(EVENT_KINDS.length);
     void c;
   });
@@ -76,7 +76,7 @@ describe('events and ages', () => {
     s.laws.reproduction = false;
     const sp = SPECIES_INDEX.get('velen')!;
     const pop = s.creatures.speciesCount[sp]!;
-    for (let t = 0; t < TICKS_PER_DAY * 4; t++) s.step();
+    for (let t = 0; t < TICKS_PER_PULSE * 4; t++) s.step();
     expect(s.creatures.speciesCount[sp]!).toBeLessThan(pop);
   });
 });

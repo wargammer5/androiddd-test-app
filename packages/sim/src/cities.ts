@@ -7,7 +7,7 @@ import { Task, Anim } from './entities.ts';
 import { Mat, Biome, World } from './world.ts';
 import { Rng } from './rng.ts';
 import { isPlant, isTree, plantStage, plantType, plantObj, Stage, PlantType, Obj, buildingObj, isBuilding, buildingType, Bld, isOre } from './objects.ts';
-import { calendar, isNight, Season, TICKS_PER_DAY } from './time.ts';
+import { calendar, isNight, Season, TICKS_PER_PULSE } from './time.ts';
 import { Mover, passable } from './pathfind.ts';
 import { placeName } from './names.ts';
 import type { Kingdom } from './kingdoms.ts';
@@ -112,7 +112,7 @@ export class CitySystem implements System, CivHooks {
       if (phase === 0) this.plan(c);
       if (phase === 24) this.assignJobs(c);
     }
-    if (tick % TICKS_PER_DAY === 0) for (const c of this.cities) if (c.alive) this.daily(c);
+    if (tick % TICKS_PER_PULSE === 0) for (const c of this.cities) if (c.alive) this.daily(c);
     if (tick % 30 === 0) this.growFields();
     if (tick % 120 === 60) this.foundCities();
   }
@@ -243,7 +243,7 @@ export class CitySystem implements System, CivHooks {
     const tick = this.sim.tick;
     if (pop === 0) {
       if (c.emptySince < 0) c.emptySince = tick;
-      else if (tick - c.emptySince > TICKS_PER_DAY * 2) this.ruin(c);
+      else if (tick - c.emptySince > TICKS_PER_PULSE * 2) this.ruin(c);
       return;
     }
     c.emptySince = -1;
@@ -456,7 +456,7 @@ export class CitySystem implements System, CivHooks {
     const e = this.sim.creatures.e;
     const members: number[] = [];
     const d = SPECIES[c.race]!;
-    for (let i = 0; i < e.high; i++) if (e.alive[i] && e.city[i] === c.id && e.age[i]! >= d.maturity * 0.6) members.push(i);
+    for (let i = 0; i < e.high; i++) if (e.alive[i] && e.city[i] === c.id && e.age[i]! >= d.maturity * 0.25) members.push(i);
     c.pop = 0;
     for (let i = 0; i < e.high; i++) if (e.alive[i] && e.city[i] === c.id) c.pop++;
     const n = members.length;
@@ -480,7 +480,7 @@ export class CitySystem implements System, CivHooks {
     if (c.extra.war) give(Job.Warrior, Math.max(2, n * 0.3));
     if (this.sim.beliefs.cultureTrait(c.culture, 'militant')) give(Job.Warrior, n * 0.1);
     give(Job.Farmer, Math.min(farms * 2, n * 0.3));
-    give(Job.Builder, building ? Math.max(1, n / 8) : 0);
+    give(Job.Builder, building ? Math.max(n >= 4 ? 2 : 1, n / 4) : 0);
     if (n >= 6) give(Job.Miner, 1 + ((needs.stone ?? 0) + (needs.iron ?? 0) + (needs.gold ?? 0) > 0 || c.era >= 1 ? n / 10 : 0));
     if (n >= 6) give(Job.Scholar, has(Bld.School) ? 2 : 1);
     if (has(Bld.Smithy)) give(Job.Smith, 1);
@@ -491,7 +491,8 @@ export class CitySystem implements System, CivHooks {
     if (has(Bld.Market)) give(Job.Trader, 1);
     if (has(Bld.Port) && c.extra.colonize) give(Job.Captain, 1);
     while (left > 0) {
-      if (foodLow || want[Job.Gatherer]! + want[Job.Farmer]! <= want[Job.Woodcutter]! + 1) want[Job.Gatherer]!++;
+      if (building && !foodLow && want[Job.Builder]! < n / 3) want[Job.Builder]!++;
+      else if (foodLow || want[Job.Gatherer]! + want[Job.Farmer]! <= want[Job.Woodcutter]! + 1) want[Job.Gatherer]!++;
       else want[Job.Woodcutter]!++;
       left--;
     }

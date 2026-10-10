@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Simulation, TICKS_PER_DAY, TICKS_PER_YEAR, Mat, Biome, SPECIES_INDEX, Obj, EFlag, Bld, buildingObj } from '../src/index.ts';
+import { Simulation, TICKS_PER_PULSE, TICKS_PER_YEAR, Mat, Biome, SPECIES_INDEX, Obj, EFlag, Bld, buildingObj } from '../src/index.ts';
 
 function plains(seed: string): Simulation {
   const s = new Simulation({ seed, size: 'small', laws: { startPeoples: false } });
@@ -112,7 +112,7 @@ describe('diplomacy', () => {
     const s = plains('d4');
     const a = city(s, 'velen', 80, 80, 20);
     const k = s.kingdomSys.get(a.kingdom)!;
-    for (let t = 0; t < TICKS_PER_DAY * 2; t++) s.step();
+    for (let t = 0; t < TICKS_PER_PULSE * 2; t++) s.step();
     const first = k.ruler;
     let resolved = false;
     for (let t = 0; t < TICKS_PER_YEAR * 4 && !resolved; t++) {
@@ -132,7 +132,7 @@ describe('diplomacy', () => {
       c.buildings.push({ type: Bld.Market, cell, done: true, progress: 0, resId: 0, era: 0, hp: 100 });
       s.world.obj[cell] = buildingObj(Bld.Market, c.race);
     }
-    for (let t = 0; t < TICKS_PER_DAY * 2; t++) s.step();
+    for (let t = 0; t < TICKS_PER_PULSE * 2; t++) s.step();
     expect(s.diplomacy.routes.length).toBeGreaterThan(0);
     const e = s.creatures.e;
     let m = -1;
