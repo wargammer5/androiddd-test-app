@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import type { GameSession } from '../game.ts';
 import { useStore } from '../store.ts';
 import { t } from '../i18n.ts';
+import { popSide } from './WindowsMenu.tsx';
 
 export const LAYERS: { id: number; key: string; icon: string }[] = [
   { id: 0, key: 'layer.normal', icon: '▦' },
@@ -18,14 +19,20 @@ export const LAYERS: { id: number; key: string; icon: string }[] = [
 export function Layers({ session, available }: { session: GameSession; available: number[] }) {
   const ov = useStore(session.overlay);
   const [open, setOpen] = useState(false);
+  const [side, setSide] = useState<'left' | 'right'>('right');
   const cur = LAYERS.find((l) => l.id === ov) ?? LAYERS[0]!;
   return (
     <div class="layers">
-      <button onClick={() => setOpen((o) => !o)} title={t('layer.title')} data-testid="btn-layers" class={ov ? 'on' : ''}>
+      <button
+        onClick={(e) => {
+          setSide(popSide(e.currentTarget as HTMLElement));
+          setOpen((o) => !o);
+        }}
+        title={t('layer.title')} data-testid="btn-layers" class={ov ? 'on' : ''}>
         {cur.icon}
       </button>
       {open && (
-        <div class="layers-pop">
+        <div class={'layers-pop ' + side}>
           {LAYERS.filter((l) => available.includes(l.id)).map((l) => (
             <button
               key={l.id}

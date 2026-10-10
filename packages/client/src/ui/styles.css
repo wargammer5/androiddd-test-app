@@ -300,6 +300,10 @@ input[type='range'] {
   padding: 4px;
   max-width: 100%;
 }
+.tool-row {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
 .tool-args {
   overflow-x: auto;
   touch-action: pan-x;
@@ -663,6 +667,26 @@ a.link {
   .win-menu {
     display: block;
   }
+}
+.layers-pop.left {
+  left: 0;
+  right: auto;
+}
+.hud-top .layers-pop {
+  max-width: calc(100vw - 12px);
+  max-height: calc(100vh - 300px * var(--ui));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  gap: 2px;
+  padding: 4px;
+  min-width: 170px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+.hud-top .layers-pop button {
+  min-height: calc(36px * var(--ui));
+  font-size: calc(14px * var(--ui));
+  padding: 0 calc(10px * var(--ui));
+  white-space: nowrap;
 }
 
 .title {

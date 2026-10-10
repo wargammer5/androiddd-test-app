@@ -8,13 +8,13 @@
 
 ## Скачать
 
-Последняя версия — **1.1.1**. Файлы лежат в [`dist/stage-12`](dist/stage-12):
+Последняя версия — **1.1.2**. Файлы лежат в [`dist/stage-12`](dist/stage-12):
 
 | Файл | Для чего |
 |---|---|
-| [`Sotvorenie-v1.1.1-release.apk`](dist/stage-12/Sotvorenie-v1.1.1-release.apk) | Установка на телефон (рекомендуется) |
-| [`Sotvorenie-v1.1.1-stage12.apk`](dist/stage-12/Sotvorenie-v1.1.1-stage12.apk) | Отладочная сборка, обновляется поверх сборок прошлых этапов |
-| [`Sotvorenie-v1.1.1.aab`](dist/stage-12/Sotvorenie-v1.1.1.aab) | Пакет для Google Play |
+| [`Sotvorenie-v1.1.2-release.apk`](dist/stage-12/Sotvorenie-v1.1.2-release.apk) | Установка на телефон (рекомендуется) |
+| [`Sotvorenie-v1.1.2-stage12.apk`](dist/stage-12/Sotvorenie-v1.1.2-stage12.apk) | Отладочная сборка, обновляется поверх сборок прошлых этапов |
+| [`Sotvorenie-v1.1.2.aab`](dist/stage-12/Sotvorenie-v1.1.2.aab) | Пакет для Google Play |
 
 Контрольные суммы — в [`SHA256SUMS.txt`](dist/stage-12/SHA256SUMS.txt), история изменений — в [`CHANGELOG.txt`](CHANGELOG.txt).
 
