@@ -17,10 +17,22 @@ import { extraPanels } from './panels.ts';
 import { Layers } from './Layers.tsx';
 import { KingdomList } from './KingdomList.tsx';
 import { DiplomacyPanel } from './DiplomacyPanel.tsx';
+import { BeliefsPanel } from './BeliefsPanel.tsx';
+import { LawsPanel } from './LawsPanel.tsx';
+import { MeasureOverlay } from './MeasureOverlay.tsx';
+import { WindowsMenu } from './WindowsMenu.tsx';
+import { StatsPanel } from './StatsPanel.tsx';
+import { ChroniclePanel } from './ChroniclePanel.tsx';
+import { EventFeed } from './EventFeed.tsx';
+import { SoundDirector } from '../audio/director.ts';
 import { registerPanel } from './panels.ts';
 
 registerPanel('kingdoms', KingdomList);
 registerPanel('diplomacy', DiplomacyPanel);
+registerPanel('beliefs', BeliefsPanel);
+registerPanel('laws', LawsPanel);
+registerPanel('stats', StatsPanel);
+registerPanel('chronicle', ChroniclePanel);
 
 export let currentSession: GameSession | null = null;
 
@@ -42,7 +54,13 @@ export function GameScreen({ params, load, exit }: { params?: NewWorldParams; lo
     session.attach(canvasRef.current!);
     if (load) session.load(load);
     else if (params) session.newWorld(params);
+    const director = new SoundDirector(session);
+    session.onPowerUsed = (p, x, y) => {
+      director.onPower(p, x, y);
+      if (settings.get().vibration && ['nuke', 'bomb', 'earthquake', 'comet', 'lightning', 'volcano'].includes(p)) platform.vibrate(40);
+    };
     return () => {
+      director.dispose();
       session.dispose();
       currentSession = null;
     };
@@ -101,6 +119,14 @@ export function GameScreen({ params, load, exit }: { params?: NewWorldParams; lo
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  const prevSpeed = useRef(1);
+  useEffect(() => {
+    if (menu) {
+      prevSpeed.current = session.speed.get();
+      session.setSpeed(0);
+    } else if (session.ready.get() && session.speed.get() === 0 && prevSpeed.current > 0) session.setSpeed(prevSpeed.current);
+  }, [menu]);
+
   const leave = async () => {
     await autosave().catch(() => undefined);
     exit();
@@ -128,19 +154,16 @@ export function GameScreen({ params, load, exit }: { params?: NewWorldParams; lo
             </div>
             <Hud session={session} onOpen={setPanel} />
             <span class="spacer" />
-            <button onClick={() => setPanel((p) => (p === 'kingdoms' ? null : 'kingdoms'))} data-testid="btn-kingdoms" aria-label="kingdoms">
-              👑
-            </button>
-            <button onClick={() => setPanel((p) => (p === 'diplomacy' ? null : 'diplomacy'))} data-testid="btn-diplomacy" aria-label="diplomacy">
-              ⚔
-            </button>
-            <Layers session={session} available={[0, 1, 4, 5]} />
+            <WindowsMenu current={panel} open={setPanel} />
+            <Layers session={session} available={[0, 1, 2, 3, 4, 5, 6, 7, 8]} />
             <button onClick={() => setMini((v) => !v)} aria-label="minimap">
               🗺
             </button>
           </div>
           {mini && <Minimap session={session} />}
           {!Panel && <Inspector session={session} />}
+          <MeasureOverlay session={session} />
+          {!Panel && <EventFeed session={session} />}
           <Toolbar session={session} onConfirm={askConfirm} />
           {Panel && <Panel session={session} onClose={() => setPanel(null)} />}
         </>

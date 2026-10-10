@@ -169,7 +169,7 @@ export class CitySystem implements System, CivHooks {
     }
     this.recount(c);
     this.sim.onCityFounded(c, kingdom);
-    this.sim.emit({ kind: 'city', text: 'ev.cityFounded', args: { city: c.name, race: SPECIES[race]!.key }, x: center % w.w, y: Math.floor(center / w.w), important: true });
+    this.sim.emit({ kind: 'city', text: 'ev.cityFounded', args: { city: c.name, race: 'species.' + SPECIES[race]!.key }, x: center % w.w, y: Math.floor(center / w.w), important: true });
     return c;
   }
 
@@ -259,7 +259,7 @@ export class CitySystem implements System, CivHooks {
     } else c.happiness = Math.min(1, c.happiness + 0.01);
     const scholars = jobs[Job.Scholar]!;
     const school = c.buildings.some((b) => b.done && b.type === Bld.School);
-    const mult = c.techs.includes('writing') ? 1.3 : 1;
+    const mult = (c.techs.includes('writing') ? 1.3 : 1) * (this.sim.beliefs.cultureTrait(c.culture, 'scholarly') ? 1.4 : 1);
     c.store.add('knowledge', (0.5 + pop * 0.03 + scholars * (school ? 3 : 1.5)) * mult, 'study');
     this.research(c);
     const want = Math.min(4 + Math.floor(Math.sqrt(pop) * 3.2) + c.era * 2, 40);
@@ -478,6 +478,7 @@ export class CitySystem implements System, CivHooks {
     give(Job.Gatherer, Math.max(1, n * (foodLow ? 0.25 : 0.12)));
     give(Job.Woodcutter, Math.max(1, n * (woodLow ? 0.2 : 0.1)));
     if (c.extra.war) give(Job.Warrior, Math.max(2, n * 0.3));
+    if (this.sim.beliefs.cultureTrait(c.culture, 'militant')) give(Job.Warrior, n * 0.1);
     give(Job.Farmer, Math.min(farms * 2, n * 0.3));
     give(Job.Builder, building ? Math.max(1, n / 8) : 0);
     if (n >= 6) give(Job.Miner, 1 + ((needs.stone ?? 0) + (needs.iron ?? 0) + (needs.gold ?? 0) > 0 || c.era >= 1 ? n / 10 : 0));
@@ -524,7 +525,9 @@ export class CitySystem implements System, CivHooks {
     if (season === Season.Winter) return;
     for (const c of this.cities) {
       if (!c.alive) continue;
-      const mult = c.techs.includes('agriculture') ? 1.4 : 1;
+      const fam = this.sim.events.famine.get(c.id);
+      if (fam !== undefined && fam > this.sim.tick) continue;
+      const mult = (c.techs.includes('agriculture') ? 1.4 : 1) * this.sim.events.mod('growth');
       for (const f of c.fields) {
         const o = w.obj[f]!;
         if ((o === Obj.FieldSprout || o === Obj.FieldGrowing) && this.rng.chance(0.06 * mult * (this.sim.weatherRain(f) ? 1.5 : 1))) {
@@ -971,7 +974,7 @@ export class CitySystem implements System, CivHooks {
     e.dir[i] = (t % w.w) + 0.5 < e.x[i]! ? 1 : 0;
     e.fatigue[i] = Math.min(1, e.fatigue[i]! + e.fatigueRate[i]! / 900);
     const timer = ++e.workTimer[i]!;
-    const gatherMul = (c.techs.includes('toolmaking') ? 1.2 : 1) * (e.tool[i] === 1 ? ECON.toolBonus : 1);
+    const gatherMul = (c.techs.includes('toolmaking') ? 1.2 : 1) * (e.tool[i] === 1 ? ECON.toolBonus : 1) * (sim.beliefs.cultureTrait(c.culture, 'artisan') ? 1.15 : 1);
     const need = Math.round(24 / gatherMul);
     const o = w.obj[t]!;
     const carry = (res: string, amt: number) => {
@@ -1065,7 +1068,7 @@ export class CitySystem implements System, CivHooks {
         if (o === Obj.FieldRipe) {
           w.obj[t] = Obj.FieldEmpty;
           w.touchVisual(t);
-          carry('food', ECON.gather.harvest! * (c.techs.includes('agriculture') ? 1.3 : 1));
+          carry('food', ECON.gather.harvest! * (c.techs.includes('agriculture') ? 1.3 : 1) * (sim.beliefs.cultureTrait(c.culture, 'agrarian') ? 1.3 : 1));
           return true;
         }
         e.phase[i] = 0;
@@ -1078,7 +1081,7 @@ export class CitySystem implements System, CivHooks {
           return false;
         }
         const def = BLD[b.type]!;
-        const speed = (c.techs.includes('masonry') ? 1.2 : 1) * (c.techs.includes('architecture') ? 1.3 : 1) * (c.techs.includes('engineering') ? 1.4 : 1) * (e.tool[i] === 1 ? 1.3 : 1);
+        const speed = (sim.beliefs.cultureTrait(c.culture, 'builders') ? 1.3 : 1) * (c.techs.includes('masonry') ? 1.2 : 1) * (c.techs.includes('architecture') ? 1.3 : 1) * (c.techs.includes('engineering') ? 1.4 : 1) * (e.tool[i] === 1 ? 1.3 : 1);
         const dp = speed / 6;
         const before = b.progress;
         b.progress = Math.min(def.work, b.progress + dp);

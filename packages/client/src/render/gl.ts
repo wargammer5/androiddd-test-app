@@ -9,6 +9,7 @@ export function compile(gl: WebGL2RenderingContext, vs: string, fs: string): Web
   const p = gl.createProgram()!;
   gl.attachShader(p, mk(gl.VERTEX_SHADER, vs));
   gl.attachShader(p, mk(gl.FRAGMENT_SHADER, fs));
+  if (vs.includes('in vec2 aPos;')) gl.bindAttribLocation(p, 0, 'aPos');
   gl.linkProgram(p);
   if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error('link: ' + gl.getProgramInfoLog(p));
   return p;

@@ -59,7 +59,14 @@ function loop(): void {
   let n = 0;
   while (acc >= 1) {
     const ts = performance.now();
-    s.step();
+    try {
+      s.step();
+    } catch (err) {
+      speed = 0;
+      acc = 0;
+      post({ t: 'error', message: 'tick ' + s.tick + ': ' + (err instanceof Error ? (err.stack ?? err.message) : String(err)) });
+      break;
+    }
     tickMs = tickMs * 0.9 + (performance.now() - ts) * 0.1;
     acc -= 1;
     n++;
@@ -113,6 +120,9 @@ ctx.onmessage = (e: MessageEvent<ToWorker>) => {
         break;
       case 'ret':
         if (sim && m.buf.byteLength === sim.entCapacityBytes()) spare.push({ buf: m.buf, meta: m.meta });
+        break;
+      case 'layer':
+        sim?.setLayer(m.mode);
         break;
       case 'full':
         sim?.world.markAllDirty();

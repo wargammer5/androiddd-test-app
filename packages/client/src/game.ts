@@ -6,6 +6,9 @@ import { buildAtlas } from './assets/atlas.ts';
 import { Store } from './store.ts';
 import { settings } from './settings.ts';
 import { platform } from './platform/index.ts';
+import { Timelapse } from './timelapse.ts';
+import { logCrash } from './crashlog.ts';
+import { Particles, BURSTS, POWER_BURST, EVENT_BURST } from './render/particles.ts';
 
 export interface ToolState {
   power: string | null;
@@ -43,6 +46,7 @@ export class GameSession {
   private hidden = false;
   private savedSpeed = 1;
   private frameTimes: number[] = [];
+  private frameCounter = 0;
   readonly fps = new Store<number>(0);
   private startTime = performance.now();
   private onFrameHooks: ((s: FrameStats) => void)[] = [];
@@ -53,7 +57,11 @@ export class GameSession {
   constructor() {
     this.worker = new Worker(new URL('./worker/sim.worker.ts', import.meta.url), { type: 'module' });
     this.worker.onmessage = (e: MessageEvent<FromWorker>) => this.onMessage(e.data);
-    this.worker.onerror = (e) => this.errors.update((l) => [...l, String(e.message)]);
+    this.worker.onerror = (e) => {
+      logCrash('worker', String(e.message));
+      this.errors.update((l) => [...l, String(e.message)]);
+    };
+    this.overlay.subscribe((mode) => this.send({ t: 'layer', mode }));
     platform.onPause(() => {
       this.hidden = true;
       this.savedSpeed = this.speed.get();
@@ -136,7 +144,13 @@ export class GameSession {
         }
         this.send({ t: 'ret', buf: m.buf, meta: m.meta }, [m.buf, m.meta]);
         this.stats.set(m.stats);
-        if (m.events.length) this.events.update((l) => [...l, ...m.events].slice(-300));
+        if (m.events.length) {
+          this.events.update((l) => [...l, ...m.events].slice(-300));
+          for (const ev of m.events) {
+            const fx = EVENT_BURST[ev.kind];
+            if (fx && ev.x !== undefined && ev.y !== undefined) this.fx(fx, ev.x, ev.y);
+          }
+        }
         if (m.minimap) this.minimapData = m.minimap;
         this.lastFollow = m.follow ?? null;
         this.follow.set(m.follow ?? null);
@@ -151,7 +165,8 @@ export class GameSession {
         break;
       }
       case 'error':
-        console.error(m.message);
+        logCrash('worker', m.message);
+        console.warn(m.message);
         this.errors.update((l) => [...l, m.message].slice(-20));
         break;
     }
@@ -171,7 +186,9 @@ export class GameSession {
     this.input = new Input(canvas, this.cam, {
       hasTool: () => this.tool.get().power !== null,
       onApply: (wx, wy, stroke, first) => this.applyTool(wx, wy, stroke, first),
-      onStrokeEnd: () => undefined,
+      onStrokeEnd: () => {
+        if (this.tool.get().power === 'magnet') this.cmd({ t: 'power', power: 'magnet_drop', x: 0, y: 0, radius: 0, shape: 'circle', stroke: 0 });
+      },
       onInspect: (wx, wy) => this.inspect.set({ x: Math.floor(wx), y: Math.floor(wy), at: performance.now() }),
       onLongPress: (wx, wy) => {
         if (settings.get().vibration) platform.vibrate(20);
@@ -191,6 +208,7 @@ export class GameSession {
   }
 
   detach(): void {
+    this.timelapse.stop();
     cancelAnimationFrame(this.raf);
     this.input?.dispose();
     this.input = null;
@@ -203,9 +221,41 @@ export class GameSession {
     this.worker.terminate();
   }
 
-  applyTool(wx: number, wy: number, stroke: number, _first: boolean): void {
+  readonly timelapse = new Timelapse(() => this.canvas);
+  readonly particles = new Particles();
+
+  fx(kind: string, x: number, y: number): void {
+    const b = BURSTS[kind];
+    if (!b || this.qualityLevel() === 0) return;
+    for (const burst of b(x, y)) this.particles.burst(burst);
+  }
+  onPowerUsed: ((power: string, x: number, y: number) => void) | null = null;
+  private lastPowerSound = 0;
+
+  get canvasEl(): HTMLCanvasElement | null {
+    return this.canvas;
+  }
+
+  readonly measure = new Store<{ a: [number, number] | null; b: [number, number] | null }>({ a: null, b: null });
+
+  applyTool(wx: number, wy: number, stroke: number, first: boolean): void {
     const t = this.tool.get();
     if (!t.power) return;
+    if (t.power === 'measure') {
+      if (!first) return;
+      const m = this.measure.get();
+      if (!m.a || m.b) this.measure.set({ a: [wx, wy], b: null });
+      else this.measure.set({ a: m.a, b: [wx, wy] });
+      return;
+    }
+    if (t.power === 'titancrab') this.followCam = true;
+    const now = performance.now();
+    if (first || now - this.lastPowerSound > 220) {
+      this.lastPowerSound = now;
+      this.onPowerUsed?.(t.power, wx, wy);
+      const fx = POWER_BURST[t.power];
+      if (fx) this.fx(fx, wx, wy);
+    }
     this.cmd({ t: 'power', power: t.power, x: wx, y: wy, radius: t.size, shape: t.shape, stroke, arg: t.arg });
   }
 
@@ -224,13 +274,39 @@ export class GameSession {
     this.sendView(true);
   }
 
+  readonly autoDrop = new Store<number>(0);
+  private slowSince = 0;
+  private fastSince = 0;
+
   qualityLevel(): number {
     const q = settings.get().quality;
     if (q === 'low') return 0;
     if (q === 'medium') return 1;
     if (q === 'high') return 2;
     const dc = platform.deviceClass();
-    return dc === 'low' ? 0 : dc === 'mid' ? 1 : 2;
+    const base = dc === 'low' ? 0 : dc === 'mid' ? 1 : 2;
+    return Math.max(0, base - this.autoDrop.get());
+  }
+
+  private adaptQuality(now: number): void {
+    if (settings.get().quality !== 'auto' || document.hidden) return;
+    const fps = this.frameTimes.length;
+    const target = settings.get().batterySaver ? 30 : settings.get().fpsLimit;
+    if (fps < Math.min(24, target * 0.75)) {
+      this.fastSince = 0;
+      if (!this.slowSince) this.slowSince = now;
+      else if (now - this.slowSince > 6000 && this.autoDrop.get() < 2) {
+        this.autoDrop.set(this.autoDrop.get() + 1);
+        this.slowSince = 0;
+      }
+    } else if (fps > target * 0.9) {
+      this.slowSince = 0;
+      if (!this.fastSince) this.fastSince = now;
+      else if (now - this.fastSince > 45000 && this.autoDrop.get() > 0) {
+        this.autoDrop.set(this.autoDrop.get() - 1);
+        this.fastSince = 0;
+      }
+    }
   }
 
   private frame(now: number): void {
@@ -245,6 +321,7 @@ export class GameSession {
     this.frameTimes.push(now);
     while (this.frameTimes.length && now - this.frameTimes[0]! > 1000) this.frameTimes.shift();
     if (this.frameTimes.length % 10 === 0) this.fps.set(this.frameTimes.length);
+    if ((this.frameCounter = (this.frameCounter + 1) % 30) === 0) this.adaptQuality(now);
     const q = this.qualityLevel();
     const dprMax = q === 0 ? 1 : q === 1 ? 1.5 : 2;
     const dpr = Math.min(window.devicePixelRatio || 1, dprMax);
@@ -272,7 +349,9 @@ export class GameSession {
     const hv = this.hover.get();
     const brush: [number, number, number, number] = t.power && hv ? [hv[0], hv[1], t.size, t.shape === 'square' ? 1 : 0] : [0, 0, 0, 0];
     const dayPhase = s?.dayPhase ?? 0.5;
-    const day = dayLight(dayPhase);
+    const day = dayLight(dayPhase) * (s?.light ?? 1);
+    this.particles.update(dt);
+    r.setParticles(this.particles.data, this.particles.count);
     r.draw(this.cam, {
       time: (now - this.startTime) / 1000,
       day,
@@ -284,6 +363,7 @@ export class GameSession {
       seasonTint: s ? seasonTint(s.season) : 0,
       cloudList: s?.clouds ?? [],
       flash: s?.flash ?? 0,
+      bloom: st.bloom && q > 0,
     });
   }
 

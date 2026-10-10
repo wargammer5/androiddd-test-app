@@ -13,6 +13,9 @@ import { Nature, placePlants } from './nature.ts';
 import { CitySystem, type City } from './cities.ts';
 import { KingdomSystem, type Kingdom } from './kingdoms.ts';
 import { Diplomacy } from './diplomacy.ts';
+import { Beliefs } from './beliefs.ts';
+import { WorldEvents } from './events.ts';
+import { Chronicle } from './chronicle.ts';
 import { traits as TRAITS } from '@sotv/content';
 import { buildings as BUILDINGS, economy as ECONOMY } from '@sotv/content';
 const ECON_RES = ECONOMY.resources;
@@ -44,7 +47,7 @@ export class Simulation {
   readonly undo = new UndoStack();
   readonly systems: System[] = [];
   private queue: Command[] = [];
-  private events: SimEvent[] = [];
+  private eventQueue: SimEvent[] = [];
   private minimapTick = -1000;
   lut: Uint8Array = baseLut();
   substances!: Substances;
@@ -53,6 +56,11 @@ export class Simulation {
   cities!: CitySystem;
   kingdomSys!: KingdomSystem;
   diplomacy!: Diplomacy;
+  beliefs!: Beliefs;
+  events!: WorldEvents;
+  chronicle!: Chronicle;
+  layerMode = 0;
+  controlled = -1;
   startPeoples = true;
 
   constructor(params: NewWorldParams, skipGen = false) {
@@ -103,8 +111,11 @@ export class Simulation {
     this.cities = new CitySystem(this);
     this.kingdomSys = this.makeKingdoms();
     this.diplomacy = new Diplomacy(this);
+    this.beliefs = new Beliefs(this);
+    this.events = new WorldEvents(this);
+    this.chronicle = new Chronicle(this);
     this.creatures.civ = this.cities;
-    this.systems.push(this.substances, this.nature, this.cities, this.kingdomSys, this.diplomacy, this.creatures);
+    this.systems.push(this.substances, this.nature, this.cities, this.kingdomSys, this.diplomacy, this.beliefs, this.events, this.creatures, this.chronicle);
   }
 
   protected makeKingdoms(): KingdomSystem {
@@ -118,6 +129,55 @@ export class Simulation {
     const members: number[] = [];
     for (let i = 0; i < e.high; i++) if (e.alive[i] && e.city[i] === c.id && e.clan[i]! < 0) members.push(i);
     this.diplomacy.newClans(members, this.kingdomSys.get(c.kingdom));
+    this.beliefs.onCityFounded(c);
+    if (this.layerMode === 2 || this.layerMode === 3) this.setLayer(this.layerMode);
+  }
+
+  raidTarget(x: number, y: number, r: number): number {
+    let best = -1;
+    let bd = r * r;
+    const w = this.world;
+    for (const c of this.cities.cities) {
+      if (!c.alive) continue;
+      const d = ((c.center % w.w) - x) ** 2 + (Math.floor(c.center / w.w) - y) ** 2;
+      if (d < bd) {
+        bd = d;
+        best = c.center;
+      }
+    }
+    return best;
+  }
+
+  setLayer(mode: number, full = true): void {
+    this.layerMode = mode;
+    this.world.zoneMap = mode === 2 || mode === 3 ? this.beliefs.zoneLayer(mode) : mode === 6 ? this.popLayer() : this.world.kingdomOfZone;
+    void full;
+    this.markZonesDirty();
+  }
+
+  markZonesDirty(): void {
+    const w = this.world;
+    for (const c of this.cities.cities) {
+      if (!c.alive) continue;
+      const cx = (c.center % w.w) >> 5;
+      const cy = Math.floor(c.center / w.w) >> 5;
+      const r = (c.radius >> 5) + 1;
+      for (let y = Math.max(0, cy - r); y <= Math.min(w.ch - 1, cy + r); y++) for (let x = Math.max(0, cx - r); x <= Math.min(w.cw - 1, cx + r); x++) w.dirty[y * w.cw + x] = 1;
+    }
+  }
+
+  popLayer(): Uint8Array {
+    const map = new Uint8Array(65536);
+    for (const c of this.cities.cities) if (c.alive) map[c.id + 1] = Math.max(1, Math.min(255, Math.round(Math.sqrt(c.pop) * 22)));
+    return map;
+  }
+
+  civName(i: number): string | null {
+    return this.beliefs.unitName(i);
+  }
+
+  unitBonus(i: number, kind: 'dmg' | 'armor' | 'heal' | 'fireRes' | 'swim' | 'speed'): number {
+    return this.beliefs.unitBonus(i, kind);
   }
 
   onCivBirth(child: number, mother: number): void {
@@ -126,10 +186,11 @@ export class Simulation {
 
   onUnitKilled(i: number, killer: number): void {
     this.diplomacy.onDeath(i, killer);
+    this.events.onUnitKilled(i, killer);
   }
 
-  relationBonus(_a: Kingdom, _b: Kingdom): number {
-    return 0;
+  relationBonus(a: Kingdom, b: Kingdom): number {
+    return this.beliefs.relationBonus(a.id, b.id);
   }
 
   warTarget(c: City, i: number): number {
@@ -154,8 +215,13 @@ export class Simulation {
     return this.diplomacy.findHeir(k);
   }
 
-  cityExtra(_c: City): Record<string, string | number> {
-    return {};
+  cityExtra(c: City): Record<string, string | number> {
+    const out: Record<string, string | number> = {};
+    const cu = this.beliefs.cultures[c.culture];
+    if (cu) out['unit.culture'] = cu.name;
+    const re = this.beliefs.religions[c.religion];
+    if (re) out['unit.religion'] = re.name;
+    return out;
   }
 
   kingdomExtra(k: Kingdom): Record<string, string | number> {
@@ -188,7 +254,9 @@ export class Simulation {
     if (k.cities.length === 0) this.kingdomSys.fall(k);
   }
 
-  onPrayer(_c: City, _i: number): void {}
+  onPrayer(c: City, _i: number): void {
+    this.beliefs.onPrayer(c);
+  }
 
   civWorkTarget(c: City, i: number): number {
     if (this.creatures.e.job[i] === 12) return this.diplomacy.traderTarget(c, i);
@@ -244,13 +312,15 @@ export class Simulation {
   }
 
   emit(e: Omit<SimEvent, 'tick'>): void {
-    this.events.push({ ...e, tick: this.tick });
-    if (this.events.length > 400) this.events.splice(0, this.events.length - 400);
+    const ev = { ...e, tick: this.tick };
+    this.chronicle?.record(ev);
+    this.eventQueue.push(ev);
+    if (this.eventQueue.length > 400) this.eventQueue.splice(0, this.eventQueue.length - 400);
   }
 
   drainEvents(): SimEvent[] {
-    const e = this.events;
-    this.events = [];
+    const e = this.eventQueue;
+    this.eventQueue = [];
     return e;
   }
 
@@ -259,6 +329,7 @@ export class Simulation {
     this.queue = [];
     for (const c of q) this.apply(c);
     for (const s of this.systems) s.step(this);
+    if (this.events.pendingUndead.length) this.events.flushUndead();
     this.tick++;
   }
 
@@ -300,6 +371,14 @@ export class Simulation {
       if (i >= 0) e.flags[i] = c.on ? e.flags[i]! | EFlag.Favorite : e.flags[i]! & ~EFlag.Favorite;
     } else if (c.t === 'debug' && c.key === 'follow') {
       this.creatures.followId = c.value ?? -1;
+    } else if (c.t === 'control') {
+      const i = e.index(this.controlled);
+      if (i >= 0) {
+        e.taskTarget[i] = Math.floor(c.y) * this.world.w + Math.floor(c.x);
+        e.task[i] = 21;
+      }
+    } else if (c.t === 'edit') {
+      this.beliefs.edit(c.kind, c.id, c.data);
     } else if (c.t === 'spawn') {
       const d = SPECIES.find((s) => s.key === c.kind);
       if (d) this.creatures.spawnGroup(d.id, c.x, c.y, 1);
@@ -330,6 +409,9 @@ export class Simulation {
 
   paletteLut(): Uint8Array {
     this.kingdomSys.writeLut(this.lut);
+    this.beliefs.writeLut(this.lut);
+    if (this.layerMode === 2 || this.layerMode === 3) this.world.zoneMap = this.beliefs.zoneLayer(this.layerMode);
+    if (this.layerMode === 6) this.world.zoneMap = this.popLayer();
     return this.lut;
   }
 
@@ -413,7 +495,8 @@ export class Simulation {
       cities,
       kingdoms,
       tickMs,
-      worldAge: 'calm',
+      worldAge: this.events.age,
+      light: this.events.mod('light'),
       weather: this.weatherNear(),
       clouds: this.nature.clouds.flatMap((c) => [Math.round(c.x * 10) / 10, Math.round(c.y * 10) / 10, Math.round(c.r), c.type]),
       flash: this.nature.flash,
@@ -451,6 +534,14 @@ export class Simulation {
         return { kingdoms: this.kingdomSys.list(), cities: this.cities.cities.filter((c) => c.alive).map((c) => ({ id: c.id, name: c.name, pop: c.pop, kingdom: c.kingdom, race: SPECIES[c.race]!.key })), ...this.listsExtra() };
       case 'diplomacy':
         return this.diplomacy.info();
+      case 'history':
+        return this.events.info();
+      case 'stats':
+        return this.chronicle.info();
+      case 'culture':
+        return this.beliefs.info('culture', q.id);
+      case 'religion':
+        return this.beliefs.info('religion', q.id);
       case 'species': {
         return SPECIES.map((d) => ({ key: d.key, kind: d.kind, count: this.creatures.speciesCount[d.id]! }));
       }
@@ -460,7 +551,7 @@ export class Simulation {
   }
 
   protected listsExtra(): Record<string, unknown> {
-    return {};
+    return this.beliefs.list() as Record<string, unknown>;
   }
 
   protected queryExtra(_q: Query): unknown {
@@ -480,6 +571,10 @@ export class Simulation {
     if (k && k.ruler === e.id(i)) extra['unit.title'] = 'unit.ruler';
     const clan = this.diplomacy.clans[e.clan[i]!];
     if (clan) extra['unit.clan'] = clan.name;
+    const cu = this.beliefs.cultures[e.culture[i]!];
+    if (cu) extra['unit.culture'] = cu.name;
+    const re = this.beliefs.religions[e.religion[i]!];
+    if (re) extra['unit.religion'] = re.name;
     this.cardExtra(i, extra);
     card.extra = extra;
     return card;
@@ -540,9 +635,14 @@ export class Simulation {
     return sw.finish();
   }
 
-  protected saveExtra(_w: SaveWriter): void {}
+  protected saveExtra(w: SaveWriter): void {
+    w.json('SIMX', { controlled: this.controlled });
+  }
 
-  protected loadExtra(_r: SaveReader): void {}
+  protected loadExtra(r: SaveReader): void {
+    const m = r.jsonOr<{ controlled: number } | null>('SIMX', null);
+    if (m) this.controlled = m.controlled;
+  }
 
   static load(bytes: Uint8Array): Simulation {
     const r = new SaveReader(bytes);
@@ -573,6 +673,7 @@ export class Simulation {
     this.rng.setState(meta.rng);
     for (const s of this.systems) s.load?.(r);
     this.loadExtra(r);
+    this.setLayer(0);
     w.markAllDirty();
     this.lutDirty = true;
   }
@@ -597,10 +698,11 @@ export class Simulation {
     }
     mix(this.tick);
     mix(this.extraHash());
+    mix(this.events.hash());
     return h >>> 0;
   }
 
   protected extraHash(): number {
-    return (this.creatures.hash() ^ this.cities.hash() ^ this.kingdomSys.hash() ^ this.diplomacy.hash()) >>> 0;
+    return (this.creatures.hash() ^ this.cities.hash() ^ this.kingdomSys.hash() ^ this.diplomacy.hash() ^ this.beliefs.hash()) >>> 0;
   }
 }

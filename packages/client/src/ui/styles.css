@@ -545,3 +545,117 @@ a.link {
   margin: 6px 0;
   background: rgba(255, 255, 255, 0.02);
 }
+.swatch {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  flex: none;
+}
+.measure {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(120px * var(--ui) + var(--safe-t));
+  z-index: 6;
+}
+
+.feed {
+  position: absolute;
+  left: calc(6px + var(--safe-l));
+  bottom: calc(126px * var(--ui) + var(--safe-b));
+  width: min(360px, 62vw);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  pointer-events: none;
+  z-index: 3;
+}
+.feed > * {
+  pointer-events: auto;
+}
+.feed-head {
+  display: flex;
+  gap: 4px;
+}
+.feed-head button {
+  min-height: 32px;
+  min-width: 32px;
+  font-size: 12px;
+  padding: 0 8px;
+  background: var(--panel);
+}
+.feed-item {
+  background: rgba(14, 16, 26, 0.82);
+  border-left: 3px solid var(--line);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  display: flex;
+  gap: 6px;
+  cursor: pointer;
+  animation: feedIn 0.3s ease-out;
+}
+.feed-item.imp {
+  border-left-color: var(--accent);
+}
+.feed-icon {
+  flex: none;
+}
+@keyframes feedIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+@media (max-width: 640px) {
+  .feed {
+    bottom: calc(140px * var(--ui) + var(--safe-b));
+    width: 70vw;
+  }
+  .feed-item {
+    font-size: 11px;
+  }
+}
+.chart {
+  margin: 4px 0 8px;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.legend i {
+  display: inline-block;
+  width: 10px;
+  height: 3px;
+  vertical-align: middle;
+}
+.species-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2px 8px;
+}
+.hud-windows {
+  position: relative;
+}
+.hud-windows .layers-pop button {
+  white-space: nowrap;
+}
+.win-inline {
+  display: contents;
+}
+.win-menu {
+  display: none;
+}
+@media (max-width: 760px) {
+  .win-inline {
+    display: none;
+  }
+  .win-menu {
+    display: block;
+  }
+}

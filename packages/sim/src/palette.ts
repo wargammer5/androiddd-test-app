@@ -9,6 +9,7 @@ export const LUT_KINGDOM = 0;
 export const LUT_CULTURE = 1;
 export const LUT_RELIGION = 2;
 export const LUT_UNIT = 3;
+export const LUT_HEAT = 4;
 export const LUT_OBJECT = 6;
 export const LUT_BIOME = 7;
 
@@ -24,6 +25,10 @@ export function baseLut(): Uint8Array {
   const lut = new Uint8Array(256 * 8 * 4);
   for (const b of biomes) lutSet(lut, LUT_BIOME, b.id, hexRgb(b.color));
   for (let i = 0; i < 256; i++) lutSet(lut, LUT_UNIT, i, [190, 175, 150]);
+  for (let i = 0; i < 256; i++) {
+    const t = i / 255;
+    lutSet(lut, LUT_HEAT, i, [Math.round(40 + 215 * Math.min(1, t * 1.6)), Math.round(30 + 200 * Math.max(0, t - 0.35) * 1.5), Math.round(90 * (1 - t))]);
+  }
   const plantCol = [[50, 110, 45], [30, 85, 55], [90, 150, 60], [30, 100, 40], [90, 150, 80], [70, 130, 60], [120, 170, 80], [190, 170, 140], [160, 120, 230]];
   for (let t = 0; t < 9; t++)
     for (let st = 0; st < 6; st++) lutSet(lut, LUT_OBJECT, 1 + t * 6 + st, plantCol[t]!, st < 2 ? 40 : st < 3 ? 120 : 190);

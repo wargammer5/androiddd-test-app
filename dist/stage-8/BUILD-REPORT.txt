@@ -1,0 +1,10 @@
+Sotvorenie v0.8.0 stage 8
+APK Sotvorenie-v0.8.0-stage8.apk 0.17 MB
+tests: ok
+content: ok
+bench: ok
+web build: ok
+smoke: ok
+apk: ok
+verify: ok
+bench: { "large-world": { "msPerTick": 1.839218756666657, "entities": 1259, "maxMs": 4.752973999999085 }, "medium-world": { "msPerTick": 0.7483682533333316, "entities": 601, "maxMs": 3.018318000002182 }, "large-substances": { "msPerTick": 1.6026157533333267, "entities": 1384, "maxMs": 4.302583999997296 }, "large-3000": { "msPerTick": 3.169420326666683, "entities": 2586, "maxMs": 9.673201999998128 } } 

@@ -7,7 +7,25 @@ import { NewWorld } from './NewWorld.tsx';
 import { About } from './About.tsx';
 import { SettingsScreen } from './SettingsScreen.tsx';
 import { GameScreen } from './GameScreen.tsx';
+import { ErrorBoundary } from './ErrorBoundary.tsx';
 import type { NewWorldParams } from '@sotv/sim';
+import { audio } from '../audio/engine.ts';
+
+const unlock = () => {
+  audio.unlock();
+  audio.setMood('menu');
+};
+window.addEventListener('pointerdown', unlock, { capture: true });
+window.addEventListener('keydown', unlock, { capture: true });
+window.addEventListener(
+  'click',
+  (e) => {
+    if ((e.target as HTMLElement)?.closest?.('button')) audio.play('click', { volume: 0.35, rate: 1, throttleMs: 30 });
+  },
+  { capture: true },
+);
+platform.onPause(() => audio.suspend());
+platform.onResume(() => audio.resume());
 
 export type Screen =
   | { id: 'menu' }
@@ -44,6 +62,10 @@ export function App() {
     });
   }, [screen.id]);
   const go = (sc: Screen) => setScreen(sc);
+  return <ErrorBoundary onReset={() => setScreen({ id: 'menu' })}>{renderScreen(screen, go)}</ErrorBoundary>;
+}
+
+function renderScreen(screen: Screen, go: (s: Screen) => void) {
   switch (screen.id) {
     case 'menu':
       return <MainMenu go={go} />;

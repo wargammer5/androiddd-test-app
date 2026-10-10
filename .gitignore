@@ -9,3 +9,4 @@ playwright-report/
 *.iml
 .DS_Store
 tools/android/.work/
+tools/signing/release.keystore

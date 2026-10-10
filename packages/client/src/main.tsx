@@ -1,7 +1,6 @@
 import { render } from 'preact';
 import { App } from './ui/App.tsx';
+import { installCrashHandlers } from './crashlog.ts';
 
-window.addEventListener('error', (e) => {
-  console.error('uncaught', e.message);
-});
+installCrashHandlers();
 render(<App />, document.getElementById('app')!);

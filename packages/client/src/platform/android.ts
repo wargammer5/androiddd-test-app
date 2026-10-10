@@ -11,6 +11,7 @@ interface Bridge {
   exitApp(): void;
   deviceInfo(): string;
   insetsJson(): string;
+  lastCrash(): string;
 }
 
 type Cb = (ok: boolean, data?: string) => void;

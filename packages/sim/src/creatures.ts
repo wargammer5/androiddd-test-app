@@ -5,7 +5,8 @@ import { Pathfinder, Mover, passable } from './pathfind.ts';
 import { Biome, Mat } from './world.ts';
 import { TICKS_PER_YEAR, isNight } from './time.ts';
 import { personName } from './names.ts';
-import { isPlant, plantStage, plantType, PlantType, Stage, plantObj } from './objects.ts';
+import { isPlant, plantStage, plantType, PlantType, Stage, plantObj, isBuilding, Obj } from './objects.ts';
+import { fuelOf as fuelOfCell } from './substances.ts';
 import type { SaveReader, SaveWriter } from './save.ts';
 import { Rng } from './rng.ts';
 
@@ -206,7 +207,8 @@ export class Creatures implements System {
     const cached = e.names.get(i);
     if (cached) return cached;
     const d = this.def(i);
-    return d.kind === 'civ' ? personName(e.nameSeed[i]!, d.race) : '';
+    if (d.kind !== 'civ') return '';
+    return this.sim.civName(i) ?? personName(e.nameSeed[i]!, d.race);
   }
 
   aiMod(i: number, key: string): number {
@@ -227,6 +229,7 @@ export class Creatures implements System {
     if (da.kind === 'monster' && db.kind !== 'monster') return true;
     if (db.kind === 'monster' && da.kind !== 'monster') return da.kind === 'civ';
     if (da.kind === 'monster' && db.kind === 'monster') return da.id !== db.id;
+    if (this.sim.events.mod('madness') && da.kind === 'civ' && e.nameSeed[a]! % 4 === 0) return db.kind !== 'animal' || db.diet === 'carn';
     if (this.civ && da.kind === 'civ' && db.kind === 'civ') return this.civ.hostile(this.sim, a, b);
     return false;
   }
@@ -266,12 +269,16 @@ export class Creatures implements System {
       if (!e.alive[i]) continue;
       const ci = Math.floor(e.y[i]!) * w.w + Math.floor(e.x[i]!);
       if (w.fire[ci]! > 0 && !(d.key === 'demon' || d.key === 'dragon')) {
-        if ((tick + i) % 6 === 0) this.damage(i, 1.5 + w.fire[ci]! * 0.6, -1);
+        if ((tick + i) % 6 === 0) this.damage(i, (1.5 + w.fire[ci]! * 0.6) * (1 - this.sim.unitBonus(i, 'fireRes')), -1);
         if (e.task[i] !== Task.Flee) this.fleeFire(i);
       }
       if (w.mat[ci] === Mat.Lava && w.depth[ci]! > 0 && !d.flies && d.key !== 'demon') this.damage(i, 25, -1);
       if (w.mat[ci] === Mat.Acid && w.depth[ci]! > 0 && !d.flies) this.damage(i, 3, -1);
       if (!e.alive[i]) continue;
+      if (e.flags[i]! & EFlag.Possessed) {
+        e.anim[i] = Anim.Idle;
+        continue;
+      }
       if (!(e.flags[i]! & EFlag.Controlled)) {
         const fast = sim.inView(e.x[i]!, e.y[i]!, 8) ? 3 : this.thinkEvery;
         const timer = --e.taskTimer[i]!;
@@ -319,7 +326,7 @@ export class Creatures implements System {
       this.damage(i, e.maxHp[i]! * 0.02, -1);
       if (!e.alive[i]) return;
     }
-    if (e.hunger[i]! < 0.6 && e.hp[i]! < e.maxHp[i]!) e.hp[i] = Math.min(e.maxHp[i]!, e.hp[i]! + e.maxHp[i]! * 0.01);
+    if (e.hunger[i]! < 0.6 && e.hp[i]! < e.maxHp[i]!) e.hp[i] = Math.min(e.maxHp[i]!, e.hp[i]! + e.maxHp[i]! * 0.01 * (1 + this.sim.unitBonus(i, 'heal')));
     const w = sim.world;
     const ci = Math.floor(e.y[i]!) * w.w + Math.floor(e.x[i]!);
     if (!passable(w, ci, this.mover(i))) {
@@ -628,6 +635,14 @@ export class Creatures implements System {
     if ((bestTask === Task.Wander || bestTask === Task.Explore || bestTask === Task.Migrate) && (task === Task.Wander || task === Task.Explore || task === Task.Migrate) && e.taskTimer[i]! > 0 && (this.paths[i] || this.waypoints[i])) return;
     if (bestTask === task && (task === Task.Hunt || task === Task.Fight || task === Task.Flee) && e.taskTimer[i]! > 0 && e.index(e.taskTarget[i]!) >= 0) return;
     if (bestTask === Task.Eat && task === Task.Eat && e.taskTimer[i]! > 0 && e.taskTarget[i]! >= 0 && isPlant(sim.world.obj[e.taskTarget[i]!]!)) return;
+    if (d.kind === 'monster' && (bestTask === Task.Wander || bestTask === Task.Explore) && this.rng.chance(0.5)) {
+      const target = this.sim.raidTarget(e.x[i]!, e.y[i]!, d.key === 'dragon' ? 160 : 90);
+      if (target >= 0) {
+        this.setTask(i, Task.Explore, 240, target);
+        if (!this.straight(i, target)) this.goTo(i, target);
+        return;
+      }
+    }
     switch (bestTask) {
       case Task.Sleep:
         this.setTask(i, Task.Sleep, 24);
@@ -871,13 +886,79 @@ export class Creatures implements System {
     const e = this.e;
     if (e.cooldown[i]! > 0) return;
     const crit = this.rng.chance(e.crit[i]!);
-    const dmg = e.dmg[i]! * (crit ? 2 : 1) * (0.8 + this.rng.float() * 0.4);
+    const dmg = e.dmg[i]! * (crit ? 2 : 1) * (0.8 + this.rng.float() * 0.4) * (1 + this.sim.unitBonus(i, 'dmg'));
     e.cooldown[i] = Math.round(12 / Math.max(0.5, e.speed[i]! / 1.6));
     e.anim[i] = Anim.Attack;
     e.dir[i] = e.x[j]! < e.x[i]! ? 1 : 0;
     this.damage(j, dmg, i);
     this.gainXp(i, 0.2);
+    const ak = SPECIES[e.species[i]!]!.key;
+    if (ak === 'dragon') this.breath(e.x[j]!, e.y[j]!, 1.5);
     if (e.alive[j]) this.sim.onUnitHit(j, i);
+  }
+
+  breath(x: number, y: number, r: number): void {
+    const w = this.sim.world;
+    const x0 = Math.floor(x);
+    const y0 = Math.floor(y);
+    const rr = Math.ceil(r);
+    for (let dy = -rr; dy <= rr; dy++)
+      for (let dx = -rr; dx <= rr; dx++) {
+        if (dx * dx + dy * dy > r * r || !w.inside(x0 + dx, y0 + dy)) continue;
+        const c = (y0 + dy) * w.w + x0 + dx;
+        if (w.mat[c] === Mat.Water) continue;
+        w.fire[c] = Math.max(w.fire[c]!, 6);
+        w.heat[c] = Math.max(w.heat[c]!, 120);
+        w.wake(c, 40);
+      }
+  }
+
+  private controlled(i: number): void {
+    const e = this.e;
+    const w = this.sim.world;
+    const t = e.taskTarget[i]!;
+    if (t < 0) return;
+    const tx = (t % w.w) + 0.5;
+    const ty = Math.floor(t / w.w) + 0.5;
+    const dx = tx - e.x[i]!;
+    const dy = ty - e.y[i]!;
+    const dist = Math.hypot(dx, dy);
+    const st = e.speed[i]! / 12;
+    if (dist > 0.2) {
+      e.x[i] = e.x[i]! + (dx / dist) * Math.min(st, dist);
+      e.y[i] = e.y[i]! + (dy / dist) * Math.min(st, dist);
+      e.dir[i] = dx < 0 ? 1 : 0;
+      e.anim[i] = ((this.sim.tick >> 2) + i) & 1;
+    }
+    const x0 = Math.floor(e.x[i]!);
+    const y0 = Math.floor(e.y[i]!);
+    for (let yy = -2; yy <= 2; yy++)
+      for (let xx = -2; xx <= 2; xx++) {
+        if (!w.inside(x0 + xx, y0 + yy) || xx * xx + yy * yy > 5) continue;
+        const c = (y0 + yy) * w.w + x0 + xx;
+        const o = w.obj[c]!;
+        if (isBuilding(o) || o === Obj.Scaffold) {
+          this.sim.cities.destroyBuildingAt(c);
+          w.obj[c] = Obj.Ruins;
+          w.touch(c);
+        } else if (isPlant(o) && plantStage(o) >= Stage.Young) {
+          w.obj[c] = Obj.Stump;
+          w.touchVisual(c);
+        }
+      }
+    if (e.cooldown[i] === 0) {
+      let hit = false;
+      this.grid.query(e.x[i]!, e.y[i]!, 2.5, (j) => {
+        if (j === i || !e.alive[j]) return;
+        if (Math.hypot(e.x[j]! - e.x[i]!, e.y[j]! - e.y[i]!) > 2.5) return;
+        this.damage(j, e.dmg[i]!, i);
+        hit = true;
+      });
+      if (hit) {
+        e.cooldown[i] = 8;
+        e.anim[i] = Anim.Attack;
+      }
+    }
   }
 
   private checkStuck(i: number): void {
@@ -1020,12 +1101,23 @@ export class Creatures implements System {
       case Task.Work:
         if (!this.civ || !this.civ.actWork(sim, i)) e.taskTimer[i] = 0;
         return;
+      case Task.Controlled:
+        this.controlled(i);
+        return;
       default: {
         if (!this.moveAlong(i)) {
           if (e.taskTimer[i]! > 12) e.taskTimer[i] = 12;
           e.anim[i] = Anim.Idle;
         }
         this.checkStuck(i);
+        const key = SPECIES[e.species[i]!]!.key;
+        if (key === 'demon' && (sim.tick + i) % 20 === 0) {
+          const c = Math.floor(e.y[i]!) * w.w + Math.floor(e.x[i]!);
+          if (fuelOfCell(w, c) > 0) {
+            w.fire[c] = 4;
+            w.wake(c, 30);
+          }
+        } else if (key === 'dragon' && (sim.tick + i) % 30 === 0 && w.zone[Math.floor(e.y[i]!) * w.w + Math.floor(e.x[i]!)] !== 0) this.breath(e.x[i]!, e.y[i]!, 1.2);
       }
     }
   }
@@ -1033,7 +1125,7 @@ export class Creatures implements System {
   breed(mother: number, father: number): void {
     const e = this.e;
     const d = this.def(mother);
-    if (!this.rng.chance(Math.min(0.95, e.fertility[mother]! + 0.25))) return;
+    if (!this.rng.chance(Math.min(0.95, (e.fertility[mother]! + 0.25) * this.sim.events.mod('birth')))) return;
     const n = Math.max(1, this.rng.irange(1, d.litter));
     for (let k = 0; k < n; k++) {
       const c = this.spawn(d.id, e.x[mother]! + this.rng.range(-0.4, 0.4), e.y[mother]! + this.rng.range(-0.4, 0.4), { mother: e.id(mother), father: e.id(father) });

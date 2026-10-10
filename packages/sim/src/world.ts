@@ -59,6 +59,7 @@ export class World {
   readonly active: Uint8Array;
   readonly kingdomOfZone: Uint8Array;
   readonly ver: Uint32Array;
+  zoneMap: Uint8Array;
 
   constructor(w: number, h: number) {
     this.w = w;
@@ -84,6 +85,7 @@ export class World {
     this.active = new Uint8Array(this.cw * this.ch);
     this.kingdomOfZone = new Uint8Array(65536);
     this.ver = new Uint32Array(this.cw * this.ch);
+    this.zoneMap = this.kingdomOfZone;
   }
 
   idx(x: number, y: number): number {
@@ -181,7 +183,8 @@ export class World {
     out0[o + 3] = this.depth[i]!;
     out1[o] = this.obj[i]!;
     out1[o + 1] = (this.objData[i]! & 15) | (Math.min(15, this.fire[i]!) << 4);
-    out1[o + 2] = this.zoneKingdom(i);
+    const z = this.zone[i]!;
+    out1[o + 2] = z === 0 ? 0 : this.zoneMap[z]!;
     const t = this.heat[i]!;
     out1[o + 3] = t < -50 ? 0 : t > 205 ? 255 : (t + 50) | 0;
   }

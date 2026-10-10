@@ -12,15 +12,31 @@ test('cities appear and the city window opens', async ({ page }) => {
   await expect(page.getByTestId('hud-stats')).toBeVisible({ timeout: 60000 });
   await page.getByTestId('speed-8').click();
   await expect(page.getByTestId('hud-cities')).not.toHaveText(/🏰 0/, { timeout: 60000 });
-  const ok = await page.evaluate(async () => {
-    const s = (window as unknown as { __sotv: { query: (q: unknown) => Promise<unknown>; inspect: { set: (v: unknown) => void }; centerOn: (x: number, y: number, z: number) => void } }).__sotv;
-    const c = (await s.query({ kind: 'city', id: 0 })) as { x: number; y: number } | null;
-    if (!c) return false;
-    s.centerOn(c.x + 0.5, c.y + 0.5, 14);
-    s.inspect.set({ x: c.x + 2, y: c.y, at: performance.now() });
-    return true;
+  await page.getByTestId('speed-0').click();
+  const c = await page.evaluate(async () => {
+    const s = (window as unknown as { __sotv: { query: (q: unknown) => Promise<unknown>; centerOn: (x: number, y: number, z: number) => void } }).__sotv;
+    const lists = (await s.query({ kind: 'lists' })) as { cities: { id: number }[] };
+    const first = lists.cities[0];
+    if (!first) return null;
+    const c = (await s.query({ kind: 'city', id: first.id })) as { x: number; y: number } | null;
+    if (c) s.centerOn(c.x + 0.5, c.y + 0.5, 14);
+    return c;
   });
-  expect(ok).toBe(true);
+  expect(c).not.toBeNull();
+  let opened = false;
+  for (const [dx, dy] of [[2, 0], [-2, 0], [0, 2], [0, -2], [3, 3], [-3, -3], [1, 1], [-1, 2]] as const) {
+    await page.evaluate(([x, y]) => (window as unknown as { __sotv: { inspect: { set: (v: unknown) => void } } }).__sotv.inspect.set({ x, y, at: performance.now() }), [c!.x + dx, c!.y + dy]);
+    if (await page.getByTestId('open-city').isVisible({ timeout: 1500 }).catch(() => false)) {
+      opened = true;
+      break;
+    }
+    await page.waitForTimeout(1500);
+    if (await page.getByTestId('open-city').isVisible()) {
+      opened = true;
+      break;
+    }
+  }
+  expect(opened).toBe(true);
   await page.getByTestId('open-city').click();
   await expect(page.getByTestId('city-panel')).toBeVisible();
   await page.waitForTimeout(3000);

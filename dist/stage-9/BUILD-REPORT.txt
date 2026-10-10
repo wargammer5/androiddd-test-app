@@ -1,0 +1,10 @@
+Sotvorenie v0.9.0 stage 9
+APK Sotvorenie-v0.9.0-stage9.apk 0.17 MB
+tests: ok
+content: ok
+bench: ok
+web build: ok
+smoke: ok
+apk: ok
+verify: ok
+bench: { "large-world": { "msPerTick": 1.8879644566666685, "entities": 1259, "maxMs": 5.01405000000068 }, "medium-world": { "msPerTick": 0.7676154433333431, "entities": 601, "maxMs": 3.1702409999998054 }, "large-substances": { "msPerTick": 1.6527031066666678, "entities": 1384, "maxMs": 4.4981169999955455 }, "large-3000": { "msPerTick": 3.108685633333322, "entities": 2586, "maxMs": 18.976347999996506 } } 

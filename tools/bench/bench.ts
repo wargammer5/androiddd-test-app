@@ -41,6 +41,7 @@ const scenarios: Scenario[] = [
   { name: 'medium-world', size: 'medium', warm: 600, ticks: 300 },
   { name: 'large-substances', size: 'large', warm: 120, ticks: 300, setup: disasters },
   { name: 'large-3000', size: 'large', warm: 120, ticks: 300, setup: crowd },
+  { name: 'huge-world', size: 'huge', warm: 300, ticks: 200 },
 ];
 
 function runOnce(s: Scenario): { msPerTick: number; entities: number; maxMs: number } {
@@ -68,6 +69,15 @@ for (const s of scenarios) {
   results[s.name] = best;
   console.log(`${s.name}: ${best.msPerTick.toFixed(3)} ms/tick (max ${best.maxMs.toFixed(2)} ms), entities ${best.entities}`);
 }
+
+if (typeof globalThis.gc === 'function') globalThis.gc();
+const before = process.memoryUsage();
+const big = new Simulation({ seed: 'bench-memory', size: 'huge' });
+for (let i = 0; i < 120; i++) big.step();
+if (typeof globalThis.gc === 'function') globalThis.gc();
+const after = process.memoryUsage();
+const heapMb = (after.heapUsed + after.arrayBuffers - before.heapUsed - before.arrayBuffers) / 1048576;
+console.log(`huge world memory: ${heapMb.toFixed(1)} MB (budget 600 MB) ${heapMb <= 600 ? 'met' : 'NOT met'}, entities ${big.stats(0).creatures}`);
 
 const baseline = existsSync(baselinePath) ? (JSON.parse(readFileSync(baselinePath, 'utf8')) as Record<string, { msPerTick: number }>) : {};
 let failed = false;

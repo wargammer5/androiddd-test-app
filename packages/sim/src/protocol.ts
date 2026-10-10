@@ -21,6 +21,7 @@ export type Command =
   | { t: 'favorite'; id: number; on: boolean }
   | { t: 'edit'; kind: string; id: number; data: Record<string, unknown> }
   | { t: 'spawn'; kind: string; x: number; y: number }
+  | { t: 'control'; x: number; y: number }
   | { t: 'debug'; key: string; value?: number };
 
 export type ToWorker =
@@ -32,7 +33,8 @@ export type ToWorker =
   | { t: 'view'; rect: ViewRect }
   | { t: 'query'; reqId: number; q: Query }
   | { t: 'ret'; buf: ArrayBuffer; meta: ArrayBuffer }
-  | { t: 'full' };
+  | { t: 'full' }
+  | { t: 'layer'; mode: number };
 
 export type Query =
   | { kind: 'cell'; x: number; y: number }
@@ -79,6 +81,7 @@ export interface FrameStats {
   kingdoms: number;
   tickMs: number;
   worldAge: string;
+  light: number;
   weather: number;
   clouds: number[];
   flash: number;

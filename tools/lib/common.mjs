@@ -30,3 +30,6 @@ export const ANDROID_JAR = process.env.ANDROID_JAR || path.join(SDK, 'platforms/
 export const KEYSTORE = path.join(ROOT, 'tools/signing/debug.keystore');
 export const KS_PASS = 'android';
 export const KS_ALIAS = 'sotvdebug';
+export const RELEASE_KEYSTORE = process.env.SOTV_RELEASE_KEYSTORE || path.join(ROOT, 'tools/signing/release.keystore');
+export const RELEASE_PASS = process.env.SOTV_RELEASE_PASS || 'sotvorenie-release';
+export const RELEASE_ALIAS = 'sotvrelease';
