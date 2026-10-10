@@ -25,6 +25,7 @@ import { StatsPanel } from './StatsPanel.tsx';
 import { ChroniclePanel } from './ChroniclePanel.tsx';
 import { EventFeed } from './EventFeed.tsx';
 import { SoundDirector } from '../audio/director.ts';
+import { audio } from '../audio/engine.ts';
 import { registerPanel } from './panels.ts';
 
 registerPanel('kingdoms', KingdomList);
@@ -47,6 +48,11 @@ export function GameScreen({ params, load, exit }: { params?: NewWorldParams; lo
   const [mini, setMini] = useState(true);
   const [confirm, setConfirm] = useState<{ text: string; go: () => void } | null>(null);
   const [panel, setPanel] = useState<string | null>(null);
+  const prevPanel = useRef<string | null>(null);
+  useEffect(() => {
+    if (panel && panel !== prevPanel.current) audio.play('ui_open', { volume: 0.4, throttleMs: 80 });
+    prevPanel.current = panel;
+  }, [panel]);
 
   useEffect(() => {
     currentSession = session;

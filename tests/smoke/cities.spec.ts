@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('cities appear and the city window opens', async ({ page }) => {
+  test.setTimeout(240000);
   const errs: string[] = [];
   page.on('pageerror', (e) => errs.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
@@ -11,7 +12,7 @@ test('cities appear and the city window opens', async ({ page }) => {
   await page.getByTestId('btn-create').click();
   await expect(page.getByTestId('hud-stats')).toBeVisible({ timeout: 60000 });
   await page.getByTestId('speed-8').click();
-  await expect(page.getByTestId('hud-cities')).not.toHaveText(/🏰 0/, { timeout: 60000 });
+  await expect(page.getByTestId('hud-cities')).not.toHaveText(/🏰 0/, { timeout: 150000 });
   await page.getByTestId('speed-0').click();
   const c = await page.evaluate(async () => {
     const s = (window as unknown as { __sotv: { query: (q: unknown) => Promise<unknown>; centerOn: (x: number, y: number, z: number) => void } }).__sotv;

@@ -1,5 +1,5 @@
-Sotvorenie v1.0.0 stage 12
-APK Sotvorenie-v1.0.0-stage12.apk 0.19 MB
+Sotvorenie v1.1.0 stage 12
+APK Sotvorenie-v1.1.0-stage12.apk 13.78 MB
 tests: ok
 content: ok
 bench: ok
@@ -7,4 +7,4 @@ web build: ok
 smoke: ok
 apk: ok
 verify: ok
-bench: { "large-world": { "msPerTick": 1.7568255766666698, "entities": 1259, "maxMs": 4.832845999997517 }, "medium-world": { "msPerTick": 0.7154088733333265, "entities": 601, "maxMs": 2.795376000001852 }, "large-substances": { "msPerTick": 1.5964748366666512, "entities": 1384, "maxMs": 4.88621399999829 }, "large-3000": { "msPerTick": 2.9985072266666735, "entities": 2586, "maxMs": 9.07700499999919 }, "huge-world": { "msPerTick": 2.8546591400000034, "entities": 2382, "maxMs": 5.730305999997654 } } 
+bench: { "large-world": { "msPerTick": 1.7600709366666707, "entities": 1259, "maxMs": 4.505721999998059 }, "medium-world": { "msPerTick": 0.7362454533333342, "entities": 601, "maxMs": 2.773850000001403 }, "large-substances": { "msPerTick": 1.6080153366666734, "entities": 1384, "maxMs": 4.192844000004698 }, "large-3000": { "msPerTick": 3.246803346666687, "entities": 2586, "maxMs": 9.276598999997077 }, "huge-world": { "msPerTick": 3.062085980000047, "entities": 2382, "maxMs": 6.0661050000053365 } } 

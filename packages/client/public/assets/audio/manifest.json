@@ -1,0 +1,239 @@
+{
+ "sfx": {
+  "click": [
+   "sfx/click_0.ogg",
+   "sfx/click_1.ogg",
+   "sfx/click_2.ogg",
+   "sfx/click_3.ogg",
+   "sfx/click_4.ogg"
+  ],
+  "ui_open": [
+   "sfx/ui_open_0.ogg",
+   "sfx/ui_open_1.ogg",
+   "sfx/ui_open_2.ogg",
+   "sfx/ui_open_3.ogg"
+  ],
+  "ui_close": [
+   "sfx/ui_close_0.ogg",
+   "sfx/ui_close_1.ogg",
+   "sfx/ui_close_2.ogg",
+   "sfx/ui_close_3.ogg"
+  ],
+  "ui_toggle": [
+   "sfx/ui_toggle_0.ogg",
+   "sfx/ui_toggle_1.ogg",
+   "sfx/ui_toggle_2.ogg",
+   "sfx/ui_toggle_3.ogg"
+  ],
+  "ui_select": [
+   "sfx/ui_select_0.ogg",
+   "sfx/ui_select_1.ogg",
+   "sfx/ui_select_2.ogg",
+   "sfx/ui_select_3.ogg"
+  ],
+  "ui_confirm": [
+   "sfx/ui_confirm_0.ogg",
+   "sfx/ui_confirm_1.ogg",
+   "sfx/ui_confirm_2.ogg",
+   "sfx/ui_confirm_3.ogg"
+  ],
+  "ui_error": [
+   "sfx/ui_error_0.ogg",
+   "sfx/ui_error_1.ogg",
+   "sfx/ui_error_2.ogg"
+  ],
+  "ui_back": [
+   "sfx/ui_back_0.ogg",
+   "sfx/ui_back_1.ogg",
+   "sfx/ui_back_2.ogg",
+   "sfx/ui_back_3.ogg"
+  ],
+  "place": [
+   "sfx/place_0.ogg",
+   "sfx/place_1.ogg",
+   "sfx/place_2.ogg",
+   "sfx/place_3.ogg"
+  ],
+  "explosion": [
+   "sfx/explosion_0.ogg",
+   "sfx/explosion_1.ogg",
+   "sfx/explosion_2.ogg",
+   "sfx/explosion_3.ogg",
+   "sfx/explosion_4.ogg",
+   "sfx/explosion_5.ogg",
+   "sfx/explosion_6.ogg",
+   "sfx/explosion_7.ogg",
+   "sfx/explosion_8.ogg",
+   "sfx/explosion_9.ogg"
+  ],
+  "thunder": [
+   "sfx/thunder_0.ogg"
+  ],
+  "splash": [
+   "sfx/splash_0.ogg",
+   "sfx/splash_1.ogg",
+   "sfx/splash_2.ogg",
+   "sfx/splash_3.ogg",
+   "sfx/splash_4.ogg",
+   "sfx/splash_5.ogg",
+   "sfx/splash_6.ogg",
+   "sfx/splash_7.ogg"
+  ],
+  "fire": [
+   "sfx/fire_0.ogg",
+   "sfx/fire_1.ogg",
+   "sfx/fire_2.ogg",
+   "sfx/fire_3.ogg",
+   "sfx/fire_4.ogg",
+   "sfx/fire_5.ogg",
+   "sfx/fire_6.ogg"
+  ],
+  "clash": [
+   "sfx/clash_0.ogg",
+   "sfx/clash_1.ogg",
+   "sfx/clash_2.ogg",
+   "sfx/clash_3.ogg",
+   "sfx/clash_4.ogg",
+   "sfx/clash_5.ogg",
+   "sfx/clash_6.ogg",
+   "sfx/clash_7.ogg",
+   "sfx/clash_8.ogg"
+  ],
+  "death": [
+   "sfx/death_0.ogg",
+   "sfx/death_1.ogg",
+   "sfx/death_2.ogg",
+   "sfx/death_3.ogg",
+   "sfx/death_4.ogg",
+   "sfx/death_5.ogg"
+  ],
+  "build": [
+   "sfx/build_0.ogg",
+   "sfx/build_1.ogg",
+   "sfx/build_2.ogg",
+   "sfx/build_3.ogg",
+   "sfx/build_4.ogg",
+   "sfx/build_5.ogg",
+   "sfx/build_6.ogg",
+   "sfx/build_7.ogg",
+   "sfx/build_8.ogg",
+   "sfx/build_9.ogg"
+  ],
+  "bell": [
+   "sfx/bell_0.ogg",
+   "sfx/bell_1.ogg",
+   "sfx/bell_2.ogg",
+   "sfx/bell_3.ogg",
+   "sfx/bell_4.ogg",
+   "sfx/bell_5.ogg",
+   "sfx/bell_6.ogg",
+   "sfx/bell_7.ogg"
+  ],
+  "horn": [
+   "sfx/horn_0.ogg",
+   "sfx/horn_1.ogg"
+  ],
+  "chime": [
+   "sfx/chime_0.ogg",
+   "sfx/chime_1.ogg",
+   "sfx/chime_2.ogg",
+   "sfx/chime_3.ogg",
+   "sfx/chime_4.ogg",
+   "sfx/chime_5.ogg"
+  ],
+  "whoosh": [
+   "sfx/whoosh_0.ogg",
+   "sfx/whoosh_1.ogg",
+   "sfx/whoosh_2.ogg"
+  ],
+  "quake": [
+   "sfx/quake_0.ogg",
+   "sfx/quake_1.ogg",
+   "sfx/quake_2.ogg",
+   "sfx/quake_3.ogg",
+   "sfx/quake_4.ogg",
+   "sfx/quake_5.ogg",
+   "sfx/quake_6.ogg",
+   "sfx/quake_7.ogg"
+  ],
+  "growl": [
+   "sfx/growl_0.ogg",
+   "sfx/growl_1.ogg",
+   "sfx/growl_2.ogg",
+   "sfx/growl_3.ogg",
+   "sfx/growl_4.ogg",
+   "sfx/growl_5.ogg",
+   "sfx/growl_6.ogg",
+   "sfx/growl_7.ogg",
+   "sfx/growl_8.ogg",
+   "sfx/growl_9.ogg",
+   "sfx/growl_10.ogg"
+  ],
+  "coin": [
+   "sfx/coin_0.ogg",
+   "sfx/coin_1.ogg",
+   "sfx/coin_2.ogg",
+   "sfx/coin_3.ogg",
+   "sfx/coin_4.ogg",
+   "sfx/coin_5.ogg"
+  ],
+  "footstep": [
+   "sfx/footstep_0.ogg",
+   "sfx/footstep_1.ogg",
+   "sfx/footstep_2.ogg",
+   "sfx/footstep_3.ogg",
+   "sfx/footstep_4.ogg"
+  ],
+  "mining": [
+   "sfx/mining_0.ogg",
+   "sfx/mining_1.ogg",
+   "sfx/mining_2.ogg",
+   "sfx/mining_3.ogg",
+   "sfx/mining_4.ogg"
+  ],
+  "jingle_good": [
+   "sfx/jingle_good_0.ogg",
+   "sfx/jingle_good_1.ogg",
+   "sfx/jingle_good_2.ogg",
+   "sfx/jingle_good_3.ogg",
+   "sfx/jingle_good_4.ogg",
+   "sfx/jingle_good_5.ogg"
+  ],
+  "jingle_bad": [
+   "sfx/jingle_bad_0.ogg",
+   "sfx/jingle_bad_1.ogg",
+   "sfx/jingle_bad_2.ogg",
+   "sfx/jingle_bad_3.ogg",
+   "sfx/jingle_bad_4.ogg",
+   "sfx/jingle_bad_5.ogg"
+  ],
+  "jingle_era": [
+   "sfx/jingle_era_0.ogg",
+   "sfx/jingle_era_1.ogg",
+   "sfx/jingle_era_2.ogg",
+   "sfx/jingle_era_3.ogg"
+  ]
+ },
+ "loops": {
+  "rain": "loops/rain.ogg"
+ },
+ "music": {
+  "menu": [
+   "music/menu_0.ogg"
+  ],
+  "calm": [
+   "music/calm_0.ogg",
+   "music/calm_1.ogg"
+  ],
+  "night": [
+   "music/night_0.ogg"
+  ],
+  "war": [
+   "music/war_0.ogg",
+   "music/war_1.ogg"
+  ],
+  "disaster": [
+   "music/disaster_0.ogg"
+  ]
+ }
+}

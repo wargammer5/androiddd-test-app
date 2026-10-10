@@ -56,8 +56,11 @@ button {
 button:hover {
   border-color: var(--accent);
 }
+button {
+  transition: transform 0.08s ease-out, border-color 0.15s, background-color 0.15s;
+}
 button:active {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.97);
 }
 button.primary {
   background: var(--accent);
@@ -113,7 +116,8 @@ input[type='range'] {
   width: 100%;
   height: 100%;
   image-rendering: pixelated;
-  opacity: 0.45;
+  opacity: 0.6;
+  animation: fadeIn 1.2s ease-out both;
 }
 
 .title {
@@ -280,6 +284,7 @@ input[type='range'] {
   gap: 4px;
   pointer-events: none;
   align-items: center;
+  z-index: 4;
 }
 .toolbar > * {
   pointer-events: auto;
@@ -657,5 +662,60 @@ a.link {
   }
   .win-menu {
     display: block;
+  }
+}
+
+.title {
+  animation: titleIn 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) both, titleGlow 4s ease-in-out 1s infinite;
+}
+.subtitle {
+  animation: fadeIn 0.8s ease-out 0.3s both;
+}
+.menu-col > button {
+  animation: slideUp 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
+}
+.menu-col > button:nth-child(1) { animation-delay: 0.35s; }
+.menu-col > button:nth-child(2) { animation-delay: 0.42s; }
+.menu-col > button:nth-child(3) { animation-delay: 0.49s; }
+.menu-col > button:nth-child(4) { animation-delay: 0.56s; }
+.menu-col > button:nth-child(5) { animation-delay: 0.63s; }
+.menu-col > button:nth-child(6) { animation-delay: 0.7s; }
+.side-panel {
+  animation: panelIn 0.18s ease-out both;
+}
+.modal-back {
+  animation: fadeIn 0.15s ease-out both;
+}
+.modal-back > .panel {
+  animation: popIn 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+}
+.screen {
+  animation: fadeIn 0.25s ease-out both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+}
+@keyframes titleIn {
+  from { opacity: 0; transform: translateY(-18px) scale(0.92); }
+}
+@keyframes titleGlow {
+  0%, 100% { text-shadow: 0 3px 0 #5a3f10, 0 0 24px rgba(232, 184, 74, 0.35); }
+  50% { text-shadow: 0 3px 0 #5a3f10, 0 0 36px rgba(232, 184, 74, 0.7); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(14px); }
+}
+@keyframes panelIn {
+  from { opacity: 0; transform: translateX(-12px); }
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.9); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
   }
 }

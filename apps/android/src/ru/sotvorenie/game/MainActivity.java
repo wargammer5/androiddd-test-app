@@ -410,8 +410,38 @@ public class MainActivity extends Activity {
             headers.put("Access-Control-Allow-Origin", "*");
             headers.put("Cache-Control", "no-cache");
             try {
+                String range = req.getRequestHeaders() == null ? null : req.getRequestHeaders().get("Range");
+                if (range == null && req.getRequestHeaders() != null) range = req.getRequestHeaders().get("range");
+                if (range != null && range.startsWith("bytes=") && mime.startsWith("audio/")) {
+                    long total = -1;
+                    try {
+                        total = assets.openFd("web" + path).getLength();
+                    } catch (Throwable ignored) {
+                        total = -1;
+                    }
+                    if (total > 0) {
+                        String[] parts = range.substring(6).split("-", -1);
+                        long start = parts[0].isEmpty() ? 0 : Long.parseLong(parts[0].trim());
+                        long end = parts.length > 1 && !parts[1].trim().isEmpty() ? Long.parseLong(parts[1].trim()) : total - 1;
+                        if (end >= total) end = total - 1;
+                        if (start <= end) {
+                            InputStream ris = assets.open("web" + path, AssetManager.ACCESS_STREAMING);
+                            long skipped = 0;
+                            while (skipped < start) {
+                                long k = ris.skip(start - skipped);
+                                if (k <= 0) break;
+                                skipped += k;
+                            }
+                            headers.put("Accept-Ranges", "bytes");
+                            headers.put("Content-Range", "bytes " + start + "-" + end + "/" + total);
+                            headers.put("Content-Length", String.valueOf(end - start + 1));
+                            return new WebResourceResponse(mime, null, 206, "Partial Content", headers, ris);
+                        }
+                    }
+                }
                 InputStream is = assets.open("web" + path, AssetManager.ACCESS_STREAMING);
                 String enc = mime.startsWith("text/") || mime.equals("application/json") ? "utf-8" : null;
+                if (mime.startsWith("audio/")) headers.put("Accept-Ranges", "bytes");
                 return new WebResourceResponse(mime, enc, 200, "OK", headers, is);
             } catch (Throwable t) {
                 return new WebResourceResponse("text/plain", "utf-8", 404, "Not Found", headers, null);
