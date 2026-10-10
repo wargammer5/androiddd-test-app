@@ -477,6 +477,7 @@ export class CitySystem implements System, CivHooks {
     };
     give(Job.Gatherer, Math.max(1, n * (foodLow ? 0.25 : 0.12)));
     give(Job.Woodcutter, Math.max(1, n * (woodLow ? 0.2 : 0.1)));
+    if (c.extra.war) give(Job.Warrior, Math.max(2, n * 0.3));
     give(Job.Farmer, Math.min(farms * 2, n * 0.3));
     give(Job.Builder, building ? Math.max(1, n / 8) : 0);
     if (n >= 6) give(Job.Miner, 1 + ((needs.stone ?? 0) + (needs.iron ?? 0) + (needs.gold ?? 0) > 0 || c.era >= 1 ? n / 10 : 0));
@@ -485,7 +486,7 @@ export class CitySystem implements System, CivHooks {
     if (n >= 10 && has(Bld.Temple)) give(Job.Priest, 1);
     if (n >= 12) give(Job.Healer, 1);
     if (n >= 8 && d.diet !== 'herb') give(Job.Hunter, 1);
-    give(Job.Warrior, n / (has(Bld.Barracks) ? 6 : 12) + (c.extra.war ? n / 4 : 0));
+    give(Job.Warrior, Math.max(n >= 6 ? 1 : 0, n / (has(Bld.Barracks) ? 6 : 12)));
     if (has(Bld.Market)) give(Job.Trader, 1);
     if (has(Bld.Port) && c.extra.colonize) give(Job.Captain, 1);
     while (left > 0) {
@@ -762,6 +763,8 @@ export class CitySystem implements System, CivHooks {
         return this.nearestObj(x, y, R, (o) => isPlant(o) && plantType(o) === PlantType.Flower && plantStage(o) >= Stage.Young, salt);
       }
       case Job.Warrior: {
+        const wt = this.sim.warTarget(c, i);
+        if (wt >= 0 && this.rng.chance(0.85)) return wt;
         const a = this.rng.float() * Math.PI * 2;
         const r = c.radius * (0.6 + this.rng.float() * 0.4);
         const px = Math.round((c.center % w.w) + Math.cos(a) * r);
@@ -1217,6 +1220,7 @@ export class CitySystem implements System, CivHooks {
     e.home[child] = e.home[mother]!;
     const c = this.city(e.city[child]!);
     if (c) c.pop++;
+    sim.onCivBirth(child, mother);
   }
 
   popCap(sim: Simulation, i: number): number {

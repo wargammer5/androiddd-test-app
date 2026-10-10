@@ -14,4 +14,7 @@ for (let y = 0; y < years; y++) {
   console.log(`y${y + 1} pop ${sim.stats(0).population} cities ${sim.stats(0).cities} kingdoms ${ks.length} exp ${sim.kingdomSys.expeditions.length} | ` + ks.map((k) => `${k.name}: c${k.cities.length} p${k.pop} a${k.army} $${k.treasury.toFixed(0)} r:${k.rulerName}`).join(' ; '));
 }
 console.log('events', JSON.stringify(evCount));
+const d = sim.diplomacy.info() as { wars: unknown[]; plots: unknown[]; alliances: unknown[]; routes: unknown[]; clans: unknown[] };
+console.log('wars', JSON.stringify(d.wars.slice(0, 4)));
+console.log('alliances', d.alliances.length, 'routes', d.routes.length, 'plots', JSON.stringify(d.plots), 'clans', d.clans.length);
 console.log('ms/tick', ((performance.now() - t0) / (years * TICKS_PER_YEAR)).toFixed(2));

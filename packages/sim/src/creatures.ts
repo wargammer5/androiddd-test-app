@@ -358,6 +358,7 @@ export class Creatures implements System {
     }
     const sim = this.sim;
     const d = this.def(i);
+    if (killer >= 0) sim.onUnitKilled(i, killer);
     if (killer >= 0 && e.alive[killer]) {
       e.kills[killer]!++;
       this.gainXp(killer, 3 + e.level[i]! * 2 + (d.kind === 'monster' ? 20 : 0));
@@ -582,7 +583,7 @@ export class Creatures implements System {
       if (fightS > 0.55 || d.kind === 'monster') consider(Task.Fight, 0.75 + fightS * 0.2, e.id(threat));
       else consider(Task.Flee, 0.8 + (1 - hpR) * 0.4, e.id(threat));
     }
-    if (d.kind === 'monster' || (d.diet !== 'herb' && d.kind === 'civ' && sim.laws.wars)) {
+    if (d.kind === 'monster' || (d.kind === 'civ' && sim.laws.wars && (e.job[i] === 11 || e.kingdom[i]! >= 0))) {
       const enemy = this.nearestEnemy(i, vision);
       if (enemy >= 0) consider(Task.Fight, 0.55 + this.aiMod(i, 'fight') + (d.kind === 'monster' ? 0.3 : 0), e.id(enemy));
     }

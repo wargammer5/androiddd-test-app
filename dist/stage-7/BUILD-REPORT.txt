@@ -1,0 +1,10 @@
+Sotvorenie v0.7.0 stage 7
+APK Sotvorenie-v0.7.0-stage7.apk 0.15 MB
+tests: ok
+content: ok
+bench: ok
+web build: ok
+smoke: ok
+apk: ok
+verify: ok
+bench: { "large-world": { "msPerTick": 1.8613896333333348, "entities": 1282, "maxMs": 4.505762000000686 }, "medium-world": { "msPerTick": 0.7710487300000023, "entities": 605, "maxMs": 2.195880000002944 }, "large-substances": { "msPerTick": 1.5207001499999995, "entities": 1385, "maxMs": 3.3300400000007357 }, "large-3000": { "msPerTick": 2.8576566666666623, "entities": 2594, "maxMs": 9.036385999999766 } } 
