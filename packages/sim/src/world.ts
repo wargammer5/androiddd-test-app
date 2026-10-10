@@ -54,9 +54,11 @@ export class World {
   readonly zone: Uint16Array;
   readonly fire: Uint8Array;
   readonly road: Uint8Array;
+  readonly still: Uint8Array;
   readonly dirty: Uint8Array;
   readonly active: Uint8Array;
   readonly kingdomOfZone: Uint8Array;
+  readonly ver: Uint32Array;
 
   constructor(w: number, h: number) {
     this.w = w;
@@ -77,9 +79,11 @@ export class World {
     this.zone = new Uint16Array(n);
     this.fire = new Uint8Array(n);
     this.road = new Uint8Array(n);
+    this.still = new Uint8Array(n);
     this.dirty = new Uint8Array(this.cw * this.ch);
     this.active = new Uint8Array(this.cw * this.ch);
     this.kingdomOfZone = new Uint8Array(65536);
+    this.ver = new Uint32Array(this.cw * this.ch);
   }
 
   idx(x: number, y: number): number {
@@ -96,13 +100,20 @@ export class World {
     return (y >> CHUNK_SHIFT) * this.cw + (x >> CHUNK_SHIFT);
   }
 
-  touch(i: number): void {
+  touchVisual(i: number): void {
     this.dirty[this.chunkOf(i)] = 1;
+  }
+
+  touch(i: number): void {
+    const c = this.chunkOf(i);
+    this.dirty[c] = 1;
+    this.ver[c]!++;
   }
 
   wake(i: number, ticks = 60): void {
     const c = this.chunkOf(i);
     this.dirty[c] = 1;
+    this.ver[c]!++;
     if (this.active[c]! < ticks) this.active[c] = ticks;
     const x = i % this.w;
     const y = (i - x) / this.w;
@@ -117,6 +128,7 @@ export class World {
   wakeChunk(c: number, ticks = 60): void {
     if (this.active[c]! < ticks) this.active[c] = ticks;
     this.dirty[c] = 1;
+    this.ver[c]!++;
   }
 
   markAllDirty(): void {

@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import { t, useLang } from '../i18n.ts';
 import type { Screen } from './App.tsx';
 import type { WorldSizeKey } from '@sotv/sim';
+import { settings } from '../settings.ts';
 
 function randomSeed(): string {
   const words = ['arka', 'velo', 'mira', 'tuno', 'sela', 'dorn', 'kiva', 'luma', 'ostra', 'rhen', 'zaja', 'pelo'];
@@ -34,7 +35,7 @@ export function NewWorld({ go }: { go: (s: Screen) => void }) {
         <div class="row">
           <button onClick={() => go({ id: 'menu' })}>{t('menu.back')}</button>
           <span class="grow" />
-          <button class="primary" data-testid="btn-create" onClick={() => go({ id: 'game', params: { seed: seed.trim() || randomSeed(), size } })}>
+          <button class="primary" data-testid="btn-create" onClick={() => go({ id: 'game', params: { seed: seed.trim() || randomSeed(), size, laws: { ecosystem: settings.get().ecosystem } } })}>
             {t('new.create')}
           </button>
         </div>

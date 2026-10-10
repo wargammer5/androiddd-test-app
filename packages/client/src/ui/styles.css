@@ -422,3 +422,116 @@ button.power {
     min-width: calc(38px * var(--ui));
   }
 }
+
+.layers {
+  position: relative;
+}
+.layers-pop {
+  position: absolute;
+  right: 0;
+  top: calc(var(--tap) + 4px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px;
+  z-index: 20;
+  min-width: 190px;
+}
+.layers-pop button {
+  text-align: left;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  margin: 3px 0;
+}
+.bar-l {
+  min-width: 92px;
+  color: var(--muted);
+}
+.bar-t {
+  flex: 1;
+  height: 8px;
+  background: #0f1119;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.bar-t > span {
+  display: block;
+  height: 100%;
+}
+.traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0;
+}
+.trait {
+  font-size: 11px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 2px 8px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.side-panel h4 {
+  margin: 8px 0 4px;
+  font-size: 13px;
+  color: var(--accent);
+}
+a.link {
+  color: var(--accent-2);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.list-row {
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  min-height: var(--tap);
+}
+.list-row:hover {
+  background: var(--panel-2);
+}
+
+.game {
+  overflow: hidden;
+}
+.hud-top {
+  flex-wrap: wrap;
+}
+@media (max-width: 640px) {
+  .hud-top {
+    gap: 4px;
+  }
+  .hud-top > button {
+    min-width: calc(42px * var(--ui));
+    padding: 0 6px;
+  }
+  .chip {
+    padding: 4px 6px;
+    gap: 5px;
+  }
+  .speed {
+    padding: 2px;
+  }
+  .speed button {
+    min-width: calc(34px * var(--ui));
+    padding: 0 2px;
+  }
+  .minimap {
+    top: calc(118px * var(--ui) + var(--safe-t));
+    width: 28vw;
+  }
+}

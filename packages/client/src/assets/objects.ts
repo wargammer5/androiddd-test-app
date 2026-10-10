@@ -304,5 +304,10 @@ export function drawObjects(p: AtlasPainter): void {
   for (let x = 0; x < 8; x += 2) p.set(T(142), x, 3, [110, 76, 44]);
   p.rect(T(143), 3, 1, 2, 7, [120, 110, 100]);
   p.rect(T(143), 2, 0, 4, 2, [255, 200, 60]);
+  for (let x = 0; x < 8; x += 3) p.rect(T(144), x, 1, 1, 7, [150, 110, 60]);
+  p.rect(T(144), 0, 2, 8, 1, [170, 130, 80]);
+  p.rect(T(144), 0, 5, 8, 1, [170, 130, 80]);
+  p.rect(T(145), 2, 4, 4, 4, [190, 160, 110]);
+  p.rect(T(145), 3, 3, 2, 1, [150, 120, 80]);
   for (let type = 0; type < 12; type++) for (let race = 0; race < 4; race++) for (let era = 0; era < 4; era++) building(p, BUILDING_TILE_BASE + (type * 4 + race) * 4 + era, type, race, era);
 }

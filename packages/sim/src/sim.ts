@@ -7,6 +7,19 @@ import { UndoStack } from './undo.ts';
 import { applyPower } from './powers.ts';
 import { DEFAULT_LAWS, LAW_PROFILES, sanitizeLaws, type Laws } from './laws.ts';
 import { SaveReader, SaveWriter, migrate, SAVE_VERSION } from './save.ts';
+import { Substances } from './substances.ts';
+import { Creatures } from './creatures.ts';
+import { Nature, placePlants } from './nature.ts';
+import { CitySystem, type City } from './cities.ts';
+import { KingdomSystem, type Kingdom } from './kingdoms.ts';
+import { traits as TRAITS } from '@sotv/content';
+import { buildings as BUILDINGS, economy as ECONOMY } from '@sotv/content';
+const ECON_RES = ECONOMY.resources;
+import { isBuilding, buildingType } from './objects.ts';
+import { calendar } from './time.ts';
+import { isPlant, plantType, plantStage, plantObj, PlantType, Stage } from './objects.ts';
+import { EFlag } from './entities.ts';
+import { species as SPECIES } from '@sotv/content';
 
 export const TICK_HZ = 12;
 export const MAX_ENTITIES = 6000;
@@ -33,6 +46,12 @@ export class Simulation {
   private events: SimEvent[] = [];
   private minimapTick = -1000;
   lut: Uint8Array = baseLut();
+  substances!: Substances;
+  creatures!: Creatures;
+  nature!: Nature;
+  cities!: CitySystem;
+  kingdomSys!: KingdomSystem;
+  startPeoples = true;
 
   constructor(params: NewWorldParams, skipGen = false) {
     this.seed = params.seed;
@@ -41,11 +60,144 @@ export class Simulation {
     this.world = new World(s, s);
     this.rng = new Rng(hashString(params.seed));
     if (params.laws) this.laws = sanitizeLaws(params.laws as Partial<Laws>);
+    this.startPeoples = params.laws?.['startPeoples'] !== false;
     this.installSystems();
-    if (!skipGen) generateWorld(this.world, this.rng.fork(1), DEFAULT_GEN);
+    if (!skipGen) {
+      generateWorld(this.world, this.rng.fork(1), DEFAULT_GEN);
+      this.populate();
+    }
   }
 
-  protected installSystems(): void {}
+  protected populate(): void {
+    placePlants(this.world, this.rng.fork(3));
+    this.creatures.spawnInitial();
+    if (this.startPeoples) this.spawnPeoples();
+  }
+
+  spawnPeoples(): void {
+    const w = this.world;
+    const r = this.rng.fork(5);
+    const BIOME_KEYS = ['sea', 'plains', 'forest', 'jungle', 'savanna', 'desert', 'mountain', 'snow', 'swamp', 'volcanic', 'acid', 'magic', 'beach'];
+    for (const d of SPECIES) {
+      if (d.kind !== 'civ') continue;
+      const want = new Set(d.biomes.map((b) => BIOME_KEYS.indexOf(b)));
+      for (let t = 0; t < 400; t++) {
+        const c = r.int(w.n);
+        if (!want.has(w.biome[c]!) || w.mat[c] !== Mat.None || w.obj[c] !== 0) continue;
+        const ids = this.creatures.spawnGroup(d.id, (c % w.w) + 0.5, Math.floor(c / w.w) + 0.5, 8);
+        for (const i of ids) {
+          this.creatures.e.age[i] = d.maturity + r.float() * d.maturity;
+          this.creatures.e.sex[i] = ids.indexOf(i) % 2;
+        }
+        break;
+      }
+    }
+  }
+
+  protected installSystems(): void {
+    this.substances = new Substances();
+    this.creatures = new Creatures(this);
+    this.nature = new Nature(this);
+    this.cities = new CitySystem(this);
+    this.kingdomSys = this.makeKingdoms();
+    this.creatures.civ = this.cities;
+    this.systems.push(this.substances, this.nature, this.cities, this.kingdomSys, this.creatures);
+  }
+
+  protected makeKingdoms(): KingdomSystem {
+    return new KingdomSystem(this);
+  }
+
+  onCityFounded(c: City, k?: Kingdom): void {
+    if (k && k.alive) this.kingdomSys.assignCity(c, k);
+    else this.kingdomSys.create(c);
+  }
+
+  onKingdomCreated(_k: Kingdom, _from?: Kingdom): void {}
+
+  onKingdomFell(_k: Kingdom): void {}
+
+  onRebellion(_c: City, _from: Kingdom, _to: Kingdom): void {}
+
+  onNewRuler(_k: Kingdom, _unit: number, _succession: boolean): void {}
+
+  findHeir(_k: Kingdom): number {
+    return -1;
+  }
+
+  cityExtra(_c: City): Record<string, string | number> {
+    return {};
+  }
+
+  kingdomExtra(_k: Kingdom): Record<string, string | number> {
+    return {};
+  }
+
+  rulerMod(k: Kingdom, key: string): number {
+    const e = this.creatures.e;
+    const i = e.index(k.ruler);
+    if (i < 0) return 0;
+    let v = 0;
+    for (const t of e.traitList(i)) {
+      const tk = TRAITS[t]!.key;
+      if (key === 'tax' && tk === 'greedy') v += 0.5;
+      if (key === 'tax' && tk === 'generous') v -= 0.3;
+      if (key === 'loyalty' && (tk === 'leader' || tk === 'generous' || tk === 'wise')) v += 0.6;
+      if (key === 'loyalty' && (tk === 'greedy' || tk === 'cursed')) v -= 0.5;
+      if (key === 'war' && (tk === 'aggressive' || tk === 'brave')) v += 0.5;
+      if (key === 'war' && (tk === 'peaceful' || tk === 'coward')) v -= 0.5;
+      if (key === 'faith' && tk === 'pious') v += 0.5;
+    }
+    return v;
+  }
+
+  onCityRuined(c: City): void {
+    const k = this.kingdomSys.get(c.kingdom);
+    if (!k) return;
+    k.cities = k.cities.filter((x) => x !== c.id);
+    if (k.capital === c.id) this.kingdomSys.moveCapital(k);
+    if (k.cities.length === 0) this.kingdomSys.fall(k);
+  }
+
+  onPrayer(_c: City, _i: number): void {}
+
+  civWorkTarget(_c: City, _i: number): number {
+    return -1;
+  }
+
+  civDoWork(_c: City, _i: number, _timer: number): boolean {
+    return false;
+  }
+
+  civHostile(_a: number, _b: number): boolean {
+    return false;
+  }
+
+  onUnitDeath(_i: number, _cell: number): void {}
+
+  onSpawnedByPlayer(_ids: number[], _key: string): void {}
+
+  onUnitHit(_victim: number, _attacker: number): void {}
+
+  onPlantEaten(cell: number, o: number): void {
+    const w = this.world;
+    if (!isPlant(o)) return;
+    const t = plantType(o);
+    const st = plantStage(o);
+    if (st === Stage.Fruiting) w.obj[cell] = plantObj(t, Stage.Adult);
+    else if (t === PlantType.Flower || t === PlantType.Berry) w.obj[cell] = st > Stage.Sprout ? plantObj(t, Stage.Sprout) : 0;
+    w.objData[cell] = 0;
+    w.touchVisual(cell);
+  }
+
+  unitColor(i: number): number {
+    const k = this.creatures.e.kingdom[i]!;
+    return k >= 0 ? k + 1 : 0;
+  }
+
+  weatherRain(i: number): boolean {
+    return this.nature.rainAt(this.world, i);
+  }
 
   enqueue(cmd: Command): void {
     this.queue.push(cmd);
@@ -102,9 +254,28 @@ export class Simulation {
     }
   }
 
-  protected onUndo(_spawned: number[]): void {}
+  protected onUndo(spawned: number[]): void {
+    const e = this.creatures.e;
+    for (const id of spawned) {
+      const i = e.index(id);
+      if (i >= 0) this.creatures.die(i, -1, 'undo');
+    }
+  }
 
-  protected applyExtra(_c: Command): void {}
+  protected applyExtra(c: Command): void {
+    const e = this.creatures.e;
+    if (c.t === 'favorite') {
+      const i = e.index(c.id);
+      if (i >= 0) e.flags[i] = c.on ? e.flags[i]! | EFlag.Favorite : e.flags[i]! & ~EFlag.Favorite;
+    } else if (c.t === 'debug' && c.key === 'follow') {
+      this.creatures.followId = c.value ?? -1;
+    } else if (c.t === 'spawn') {
+      const d = SPECIES.find((s) => s.key === c.kind);
+      if (d) this.creatures.spawnGroup(d.id, c.x, c.y, 1);
+    } else this.applyMore(c);
+  }
+
+  protected applyMore(_c: Command): void {}
 
   hasPendingVisual(): boolean {
     return this.world.dirty.indexOf(1) >= 0;
@@ -118,16 +289,24 @@ export class Simulation {
     return MAX_ENTITIES * 2 * 4;
   }
 
-  writeEntities(_pos: Float32Array, _meta: Uint32Array): number {
-    return 0;
+  writeEntities(pos: Float32Array, meta: Uint32Array): number {
+    return this.creatures.write(pos, meta, (i) => this.unitColor(i));
+  }
+
+  hasUnits(): boolean {
+    return this.creatures.e.count > 0;
   }
 
   paletteLut(): Uint8Array {
+    this.kingdomSys.writeLut(this.lut);
     return this.lut;
   }
 
   followInfo(): { id: number; x: number; y: number } | undefined {
-    return undefined;
+    const c = this.creatures;
+    const i = c.e.index(c.followId);
+    if (i < 0) return undefined;
+    return { id: c.followId, x: c.e.x[i]!, y: c.e.y[i]! };
   }
 
   minimap(force = false): { w: number; h: number; data: Uint8Array } | undefined {
@@ -187,33 +366,108 @@ export class Simulation {
   }
 
   stats(tickMs: number): FrameStats {
+    const cal = calendar(this.tick);
+    let pop = 0;
+    for (const d of SPECIES) if (d.kind === 'civ') pop += this.creatures.speciesCount[d.id]!;
+    const cities = this.cities.cities.filter((c) => c.alive).length;
+    const kingdoms = this.kingdomSys.kingdoms.filter((k) => k.alive).length;
     return {
       tick: this.tick,
-      day: 0,
-      year: 0,
-      season: 0,
-      dayPhase: 0.5,
-      population: 0,
-      creatures: 0,
-      cities: 0,
-      kingdoms: 0,
+      day: cal.day,
+      year: cal.year,
+      season: cal.season,
+      dayPhase: cal.dayPhase,
+      population: pop,
+      creatures: this.creatures.e.count,
+      cities,
+      kingdoms,
       tickMs,
       worldAge: 'calm',
-      weather: 0,
+      weather: this.weatherNear(),
+      clouds: this.nature.clouds.flatMap((c) => [Math.round(c.x * 10) / 10, Math.round(c.y * 10) / 10, Math.round(c.r), c.type]),
+      flash: this.nature.flash,
+      wind: this.nature.wind,
     };
   }
 
+  weatherNear(): number {
+    const v = this.view;
+    const cx = (v.x0 + v.x1) / 2;
+    const cy = (v.y0 + v.y1) / 2;
+    for (const c of this.nature.clouds) if ((c.x - cx) ** 2 + (c.y - cy) ** 2 < (c.r + 10) ** 2) return c.type;
+    return 0;
+  }
+
   query(q: Query): unknown {
-    if (q.kind === 'cell') return this.cellInfo(q.x, q.y);
-    if (q.kind === 'laws') return this.laws;
+    switch (q.kind) {
+      case 'cell':
+        return this.cellInfo(q.x, q.y);
+      case 'laws':
+        return this.laws;
+      case 'unitAt': {
+        const i = this.creatures.unitAt(q.x, q.y, q.r);
+        return i >= 0 ? { id: this.creatures.e.id(i) } : null;
+      }
+      case 'unit': {
+        const i = this.creatures.e.index(q.id);
+        return i >= 0 ? this.unitCard(i) : null;
+      }
+      case 'city':
+        return this.cities.cityInfo(q.id);
+      case 'kingdom':
+        return this.kingdomSys.info(q.id);
+      case 'lists':
+        return { kingdoms: this.kingdomSys.list(), cities: this.cities.cities.filter((c) => c.alive).map((c) => ({ id: c.id, name: c.name, pop: c.pop, kingdom: c.kingdom, race: SPECIES[c.race]!.key })), ...this.listsExtra() };
+      case 'species': {
+        return SPECIES.map((d) => ({ key: d.key, kind: d.kind, count: this.creatures.speciesCount[d.id]! }));
+      }
+      default:
+        return this.queryExtra(q);
+    }
+  }
+
+  protected listsExtra(): Record<string, unknown> {
+    return {};
+  }
+
+  protected queryExtra(_q: Query): unknown {
     return null;
   }
+
+  unitCard(i: number): unknown {
+    const card = this.creatures.card(i);
+    const e = this.creatures.e;
+    const extra: Record<string, string | number> = {};
+    const c = this.cities.city(e.city[i]!);
+    if (c) extra['unit.city'] = c.name;
+    if (e.job[i]) extra['unit.job'] = 'job.' + e.job[i];
+    if (e.carryAmt[i]) extra['unit.carry'] = `${e.carryAmt[i]} × ${ECON_RES[e.carry[i]!]}`;
+    const k = this.kingdomSys.get(e.kingdom[i]!);
+    if (k) extra['cell.kingdom'] = k.name;
+    if (k && k.ruler === e.id(i)) extra['unit.title'] = 'unit.ruler';
+    this.cardExtra(i, extra);
+    card.extra = extra;
+    return card;
+  }
+
+  protected cardExtra(_i: number, _extra: Record<string, string | number>): void {}
 
   cellInfo(x: number, y: number): unknown {
     const w = this.world;
     if (!w.inside(x, y)) return null;
     const i = w.idx(x, y);
+    const o = w.obj[i]!;
+    const z = w.zone[i]!;
+    const city = z ? this.cities.city(z - 1) : null;
+    const kingdom = city ? this.kingdomSys.get(city.kingdom) : null;
+    let objName: string | undefined;
+    if (isPlant(o)) objName = 'plant.' + ['oak', 'pine', 'palm', 'jungletree', 'cactus', 'berry', 'flower', 'mushroom', 'crystal'][plantType(o)];
+    else if (isBuilding(o)) objName = 'bld.' + BUILDINGS[buildingType(o)]!.key;
+    else if (o) objName = 'obj.' + o;
     return {
+      objName,
+      city: city ? { id: city.id, name: city.name } : undefined,
+      kingdom: kingdom ? { id: kingdom.id, name: kingdom.name } : undefined,
       x,
       y,
       biome: w.biome[i],
@@ -244,6 +498,7 @@ export class Simulation {
     sw.array('L.zone', w.zone);
     sw.array('L.fire', w.fire);
     sw.array('L.road', w.road);
+    sw.array('L.still', w.still);
     sw.array('L.active', w.active);
     for (const s of this.systems) s.save?.(sw);
     this.saveExtra(sw);
@@ -277,6 +532,7 @@ export class Simulation {
     r.into('L.zone', w.zone);
     r.into('L.fire', w.fire);
     r.into('L.road', w.road);
+    r.into('L.still', w.still);
     r.into('L.active', w.active);
     this.tick = meta.tick;
     this.rng.setState(meta.rng);
@@ -310,6 +566,6 @@ export class Simulation {
   }
 
   protected extraHash(): number {
-    return 0;
+    return (this.creatures.hash() ^ this.cities.hash() ^ this.kingdomSys.hash()) >>> 0;
   }
 }

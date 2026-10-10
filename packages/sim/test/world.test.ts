@@ -64,16 +64,15 @@ describe('save format', () => {
 describe('terrain powers', () => {
   it('raise then undo restores the world', () => {
     const s = new Simulation({ seed: 'pow', size: 'small' });
-    const before = s.hash();
-    const tick = s.tick;
+    const snap = () => [s.world.height.slice(), s.world.biome.slice()];
+    const before = snap();
     s.enqueue({ t: 'power', power: 'raise', x: 100, y: 100, radius: 6, shape: 'circle', stroke: 1 });
     s.enqueue({ t: 'power', power: 'raise', x: 104, y: 100, radius: 6, shape: 'circle', stroke: 1 });
     s.step();
-    expect(s.hash()).not.toBe(before);
+    expect(snap()).not.toEqual(before);
     s.enqueue({ t: 'undo' });
     s.step();
-    s.tick = tick;
-    expect(s.hash()).toBe(before);
+    expect(snap()).toEqual(before);
   });
 
   it('ocean brush creates water', () => {

@@ -12,15 +12,40 @@ interface Scenario {
   size: 'small' | 'medium' | 'large' | 'huge';
   warm: number;
   ticks: number;
+  setup?: (sim: Simulation) => void;
+}
+
+function disasters(sim: Simulation): void {
+  const w = sim.world.w;
+  let stroke = 1;
+  for (let k = 0; k < 12; k++) {
+    const x = ((k * 97) % 10) * (w / 10) + w / 20;
+    const y = ((k * 53) % 10) * (w / 10) + w / 20;
+    sim.enqueue({ t: 'power', power: k % 3 === 0 ? 'lava' : k % 3 === 1 ? 'water' : 'fire', x, y, radius: 8, shape: 'circle', stroke: stroke++ });
+  }
+}
+
+function crowd(sim: Simulation): void {
+  const w = sim.world;
+  let guard = 0;
+  let k = 0;
+  while (sim.creatures.e.count < 3000 && guard++ < 200000) {
+    const c = (Math.imul(guard, 2654435761) >>> 0) % w.n;
+    if (w.mat[c] !== 0) continue;
+    sim.creatures.spawn(k++ % 12, (c % w.w) + 0.5, Math.floor(c / w.w) + 0.5);
+  }
 }
 
 const scenarios: Scenario[] = [
   { name: 'large-world', size: 'large', warm: 600, ticks: 300 },
   { name: 'medium-world', size: 'medium', warm: 600, ticks: 300 },
+  { name: 'large-substances', size: 'large', warm: 120, ticks: 300, setup: disasters },
+  { name: 'large-3000', size: 'large', warm: 120, ticks: 300, setup: crowd },
 ];
 
 function runOnce(s: Scenario): { msPerTick: number; entities: number; maxMs: number } {
   const sim = new Simulation({ seed: 'bench-' + s.name, size: s.size });
+  s.setup?.(sim);
   for (let i = 0; i < s.warm; i++) sim.step();
   let maxMs = 0;
   const t0 = performance.now();
