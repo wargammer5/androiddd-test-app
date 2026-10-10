@@ -16,7 +16,7 @@ jobs:
       - run: pnpm build:web
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm smoke
-      - run: sudo apt-get update && sudo apt-get install -y android-sdk android-sdk-platform-23 dalvik-exchange zip
+      - run: sudo apt-get update && sudo apt-get install -y android-sdk android-sdk-platform-23 android-sdk-build-tools dalvik-exchange zip
       - run: node tools/android/build-apk.mjs --skip-web && node tools/android/verify-apk.mjs
       - uses: actions/upload-artifact@v4
         with:
