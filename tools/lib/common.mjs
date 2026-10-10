@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -25,8 +25,8 @@ export function apkName(v) {
   return `Sotvorenie-v${v.version}-stage${v.stage}.apk`;
 }
 
-export const SDK = process.env.ANDROID_HOME || '/usr/lib/android-sdk';
-export const ANDROID_JAR = process.env.ANDROID_JAR || path.join(SDK, 'platforms/android-23/android.jar');
+const JAR_CANDIDATES = [process.env.ANDROID_JAR, ...[process.env.ANDROID_HOME, process.env.ANDROID_SDK_ROOT, '/usr/lib/android-sdk'].filter(Boolean).map((sdk) => path.join(sdk, 'platforms/android-23/android.jar'))].filter(Boolean);
+export const ANDROID_JAR = JAR_CANDIDATES.find((p) => existsSync(p)) ?? JAR_CANDIDATES[JAR_CANDIDATES.length - 1];
 export const KEYSTORE = path.join(ROOT, 'tools/signing/debug.keystore');
 export const KS_PASS = 'android';
 export const KS_ALIAS = 'sotvdebug';
