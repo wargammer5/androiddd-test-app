@@ -21,3 +21,4 @@ export * from './substances.ts';
 export * from './diplomacy.ts';
 export * from './beliefs.ts';
 export * from './events.ts';
+export * from './chronicle.ts';

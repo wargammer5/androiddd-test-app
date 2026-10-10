@@ -1,3 +1,4 @@
+import { openWindow } from './helpers.ts';
 import { test, expect } from '@playwright/test';
 
 test('cultures and religions window, editor and layers', async ({ page }) => {
@@ -11,7 +12,7 @@ test('cultures and religions window, editor and layers', async ({ page }) => {
   await expect(page.getByTestId('hud-stats')).toBeVisible({ timeout: 60000 });
   await page.getByTestId('speed-8').click();
   await expect(page.getByTestId('hud-cities')).not.toHaveText(/🏰 0/, { timeout: 60000 });
-  await page.getByTestId('btn-beliefs').click();
+  await openWindow(page, 'beliefs');
   await expect(page.getByTestId('beliefs-panel')).toBeVisible();
   await page.locator('.list-row').first().click({ timeout: 15000 });
   await expect(page.getByTestId('belief-editor')).toBeVisible();

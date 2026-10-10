@@ -299,7 +299,7 @@ export class Beliefs implements System {
         this.sim.emit({ kind: 'cultureSpread', text: 'ev.cultureSpread', args: { city: c.name, culture: nw.name } });
       }
       this.sim.lutDirty = true;
-      this.sim.world.markAllDirty();
+      this.sim.markZonesDirty();
     }
   }
 
@@ -311,7 +311,7 @@ export class Beliefs implements System {
       const r = this.newReligion(c, founder, -1);
       c.religion = r.id;
       sim.emit({ kind: 'religion', text: 'ev.religionFounded', args: { city: c.name, religion: r.name, deity: r.deity, founder }, important: true });
-      sim.world.markAllDirty();
+      sim.markZonesDirty();
       return;
     }
     const infl = new Map<number, number>();
@@ -335,7 +335,7 @@ export class Beliefs implements System {
       c.religion = best;
       sim.emit({ kind: 'conversion', text: 'ev.conversion', args: { city: c.name, religion: this.religions[best]!.name } });
       sim.lutDirty = true;
-      sim.world.markAllDirty();
+      sim.markZonesDirty();
     }
   }
 
@@ -357,7 +357,7 @@ export class Beliefs implements System {
       const heresy = this.newReligion(seed, this.prophetName(seed), r.id);
       for (const c of far) if (c.kingdom === seed.kingdom) c.religion = heresy.id;
       this.sim.emit({ kind: 'schism', text: 'ev.schism', args: { religion: r.name, heresy: heresy.name, city: seed.name }, important: true });
-      this.sim.world.markAllDirty();
+      this.sim.markZonesDirty();
     }
   }
 
@@ -371,7 +371,7 @@ export class Beliefs implements System {
       const child = this.newCulture(cu.race, members[0]!.id, cu.id);
       for (const c of members) if (c.kingdom === k) c.culture = child.id;
       this.sim.emit({ kind: 'cultureSplit', text: 'ev.cultureSplit', args: { culture: cu.name, child: child.name } });
-      this.sim.world.markAllDirty();
+      this.sim.markZonesDirty();
     }
   }
 
@@ -459,7 +459,7 @@ export class Beliefs implements System {
       if (vows.length >= 2) l.vowels = vows;
     }
     this.sim.lutDirty = true;
-    this.sim.world.markAllDirty();
+    this.sim.markZonesDirty();
   }
 
   writeLut(lut: Uint8Array): void {

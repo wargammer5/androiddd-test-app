@@ -45,6 +45,9 @@ importers:
       '@sotv/sim':
         specifier: workspace:*
         version: link:../sim
+      fflate:
+        specifier: 0.8.3
+        version: 0.8.3
       preact:
         specifier: 10.29.8
         version: 10.29.8

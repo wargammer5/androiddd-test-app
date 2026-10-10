@@ -1,3 +1,4 @@
+import { openWindow } from './helpers.ts';
 import { test, expect } from '@playwright/test';
 
 test('laws, dangerous powers with confirmation, titan crab and measure', async ({ page }) => {
@@ -10,11 +11,11 @@ test('laws, dangerous powers with confirmation, titan crab and measure', async (
   await page.getByTestId('size-small').click();
   await page.getByTestId('btn-create').click();
   await expect(page.getByTestId('hud-stats')).toBeVisible({ timeout: 60000 });
-  await page.getByTestId('btn-laws').click();
+  await openWindow(page, 'laws');
   await expect(page.getByTestId('laws-panel')).toBeVisible();
   await page.getByTestId('profile-chaos').click();
   await page.getByTestId('law-wars').click();
-  await page.getByTestId('btn-laws').click();
+  await openWindow(page, 'laws');
   const box = (await page.getByTestId('world-canvas').boundingBox())!;
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;

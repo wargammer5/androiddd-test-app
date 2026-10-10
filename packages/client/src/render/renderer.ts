@@ -156,6 +156,34 @@ void main(){
     if (owner > 0) col = mix(col, lut(row, owner).rgb, 0.6); else col *= 0.6;
   }
   if (uOverlay == 4) col = mix(col * 0.3, heatColor((temp + 30.0) / 230.0), 0.85);
+  if (uOverlay == 6) {
+    if (owner > 0) col = mix(col * 0.5, lut(4, owner).rgb, 0.8); else col *= 0.45;
+  }
+  if (uOverlay == 7) {
+    vec3 base = col * 0.32;
+    vec3 rc = base;
+    if (obj == 61) rc = vec3(0.95, 0.5, 0.25);
+    else if (obj == 62) rc = vec3(1.0, 0.85, 0.2);
+    else if (obj == 63) rc = vec3(0.3, 0.95, 1.0);
+    else if (obj == 60 || obj == 64 || obj == 65) rc = vec3(0.75, 0.75, 0.8);
+    else if (obj >= 1 && obj <= 54) {
+      int pt = (obj - 1) / 6;
+      int st = (obj - 1) - pt * 6;
+      rc = st == 4 ? vec3(0.95, 0.3, 0.7) : pt <= 3 && st >= 2 ? vec3(0.2, 0.75, 0.25) : vec3(0.35, 0.55, 0.3);
+    } else if (obj >= 70 && obj <= 73) rc = vec3(0.9, 0.8, 0.3);
+    else if (obj == 78) rc = vec3(0.6, 0.3, 0.9);
+    col = rc;
+  }
+  if (uOverlay == 8) {
+    float moist = 0.0;
+    vec3 eco = mix(vec3(0.25, 0.18, 0.1), vec3(0.1, 0.25, 0.35), clamp((float(biome == 0 ? 0 : 1)) * 0.0 + lut(7, biome).g, 0.0, 1.0));
+    if (obj >= 1 && obj <= 54) {
+      int st = (obj - 1) - ((obj - 1) / 6) * 6;
+      eco = mix(eco, vec3(0.2, 0.9, 0.3), 0.35 + float(st) * 0.11);
+    }
+    if (mat == 1 && depth > 0.0) eco = vec3(0.1, 0.25, 0.55);
+    col = eco + moist;
+  }
   if (uOverlay == 5) col = mix(col * 0.4, lut(7, biome).rgb, 0.85);
 
   float light = uDay;

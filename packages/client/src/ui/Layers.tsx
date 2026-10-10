@@ -10,6 +10,9 @@ export const LAYERS: { id: number; key: string; icon: string }[] = [
   { id: 3, key: 'layer.religion', icon: '⛩' },
   { id: 4, key: 'layer.temperature', icon: '🌡' },
   { id: 5, key: 'layer.biomes', icon: '🌿' },
+  { id: 6, key: 'layer.population', icon: '👥' },
+  { id: 7, key: 'layer.resources', icon: '⛏' },
+  { id: 8, key: 'layer.ecosystem', icon: '🌱' },
 ];
 
 export function Layers({ session, available }: { session: GameSession; available: number[] }) {

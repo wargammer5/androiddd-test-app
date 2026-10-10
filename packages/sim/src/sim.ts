@@ -15,6 +15,7 @@ import { KingdomSystem, type Kingdom } from './kingdoms.ts';
 import { Diplomacy } from './diplomacy.ts';
 import { Beliefs } from './beliefs.ts';
 import { WorldEvents } from './events.ts';
+import { Chronicle } from './chronicle.ts';
 import { traits as TRAITS } from '@sotv/content';
 import { buildings as BUILDINGS, economy as ECONOMY } from '@sotv/content';
 const ECON_RES = ECONOMY.resources;
@@ -57,6 +58,7 @@ export class Simulation {
   diplomacy!: Diplomacy;
   beliefs!: Beliefs;
   events!: WorldEvents;
+  chronicle!: Chronicle;
   layerMode = 0;
   controlled = -1;
   startPeoples = true;
@@ -111,8 +113,9 @@ export class Simulation {
     this.diplomacy = new Diplomacy(this);
     this.beliefs = new Beliefs(this);
     this.events = new WorldEvents(this);
+    this.chronicle = new Chronicle(this);
     this.creatures.civ = this.cities;
-    this.systems.push(this.substances, this.nature, this.cities, this.kingdomSys, this.diplomacy, this.beliefs, this.events, this.creatures);
+    this.systems.push(this.substances, this.nature, this.cities, this.kingdomSys, this.diplomacy, this.beliefs, this.events, this.creatures, this.chronicle);
   }
 
   protected makeKingdoms(): KingdomSystem {
@@ -145,10 +148,28 @@ export class Simulation {
     return best;
   }
 
-  setLayer(mode: number): void {
+  setLayer(mode: number, full = true): void {
     this.layerMode = mode;
-    this.world.zoneMap = mode === 2 || mode === 3 ? this.beliefs.zoneLayer(mode) : this.world.kingdomOfZone;
-    this.world.markAllDirty();
+    this.world.zoneMap = mode === 2 || mode === 3 ? this.beliefs.zoneLayer(mode) : mode === 6 ? this.popLayer() : this.world.kingdomOfZone;
+    void full;
+    this.markZonesDirty();
+  }
+
+  markZonesDirty(): void {
+    const w = this.world;
+    for (const c of this.cities.cities) {
+      if (!c.alive) continue;
+      const cx = (c.center % w.w) >> 5;
+      const cy = Math.floor(c.center / w.w) >> 5;
+      const r = (c.radius >> 5) + 1;
+      for (let y = Math.max(0, cy - r); y <= Math.min(w.ch - 1, cy + r); y++) for (let x = Math.max(0, cx - r); x <= Math.min(w.cw - 1, cx + r); x++) w.dirty[y * w.cw + x] = 1;
+    }
+  }
+
+  popLayer(): Uint8Array {
+    const map = new Uint8Array(65536);
+    for (const c of this.cities.cities) if (c.alive) map[c.id + 1] = Math.max(1, Math.min(255, Math.round(Math.sqrt(c.pop) * 22)));
+    return map;
   }
 
   civName(i: number): string | null {
@@ -291,7 +312,9 @@ export class Simulation {
   }
 
   emit(e: Omit<SimEvent, 'tick'>): void {
-    this.eventQueue.push({ ...e, tick: this.tick });
+    const ev = { ...e, tick: this.tick };
+    this.chronicle?.record(ev);
+    this.eventQueue.push(ev);
     if (this.eventQueue.length > 400) this.eventQueue.splice(0, this.eventQueue.length - 400);
   }
 
@@ -388,6 +411,7 @@ export class Simulation {
     this.kingdomSys.writeLut(this.lut);
     this.beliefs.writeLut(this.lut);
     if (this.layerMode === 2 || this.layerMode === 3) this.world.zoneMap = this.beliefs.zoneLayer(this.layerMode);
+    if (this.layerMode === 6) this.world.zoneMap = this.popLayer();
     return this.lut;
   }
 
@@ -512,6 +536,8 @@ export class Simulation {
         return this.diplomacy.info();
       case 'history':
         return this.events.info();
+      case 'stats':
+        return this.chronicle.info();
       case 'culture':
         return this.beliefs.info('culture', q.id);
       case 'religion':

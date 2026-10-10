@@ -5,11 +5,27 @@ import { APP_STAGE, APP_VERSION } from '../version.ts';
 import { AUTOSAVE_KEY, SLOT_KEYS, listSaves, readSave, writeSave, type SaveMeta } from '../saves.ts';
 import { platform } from '../platform/index.ts';
 import { SettingsForm } from './SettingsForm.tsx';
+import { useStore } from '../store.ts';
+import { canvasPng } from '../timelapse.ts';
+import { TimelapseView } from './TimelapseView.tsx';
 
 export function PauseMenu({ session, onClose, onExit, onLoad }: { session: GameSession; onClose: () => void; onExit: () => void; onLoad: (b: Uint8Array) => void }) {
   const [saves, setSaves] = useState<SaveMeta[]>([]);
   const [msg, setMsg] = useState('');
-  const [view, setView] = useState<'main' | 'settings'>('main');
+  const [view, setView] = useState<'main' | 'settings' | 'timelapse'>('main');
+  const tl = useStore(session.timelapse.state);
+  const screenshot = async () => {
+    const c = session.canvasEl;
+    if (!c) return;
+    const png = await canvasPng(c);
+    if (!png) return;
+    const ok = await platform.exportFile(`sotvorenie-${session.info.seed}-${Date.now()}.png`, png, 'image/png');
+    setMsg(ok ? t('shot.saved') : t('save.failed'));
+  };
+  const exportTimelapse = async () => {
+    const ok = await platform.exportFile(`sotvorenie-timelapse-${Date.now()}.zip`, session.timelapse.zip(), 'application/zip');
+    setMsg(ok ? t('save.exported') : t('save.failed'));
+  };
   const refresh = () => listSaves().then(setSaves).catch(() => setSaves([]));
   useEffect(() => {
     refresh();
@@ -41,6 +57,7 @@ export function PauseMenu({ session, onClose, onExit, onLoad }: { session: GameS
     await platform.share(t('app.title'), t('share.seed', { seed: session.info.seed, size: t('size.' + session.info.size) }));
   };
   const find = (k: string) => saves.find((s) => s.key === k);
+  if (view === 'timelapse') return <TimelapseView session={session} onClose={() => setView('main')} />;
   if (view === 'settings')
     return (
       <div class="modal-back" onClick={onClose}>
@@ -84,6 +101,27 @@ export function PauseMenu({ session, onClose, onExit, onLoad }: { session: GameS
           <button onClick={exportFile}>{t('save.export')}</button>
           <button onClick={importFile}>{t('save.import')}</button>
           <button onClick={shareSeed}>{t('share.button')}</button>
+        </div>
+        <h3>{t('media.title')}</h3>
+        <div class="row">
+          <button onClick={screenshot} data-testid="btn-screenshot">
+            📷 {t('shot.button')}
+          </button>
+          {tl.recording ? (
+            <button class="on" onClick={() => session.timelapse.stop()} data-testid="btn-tl-stop">
+              ⏹ {t('tl.stop')} ({tl.count})
+            </button>
+          ) : (
+            <button onClick={() => session.timelapse.start()} data-testid="btn-tl-start">
+              🎞 {t('tl.start')}
+            </button>
+          )}
+          <button disabled={tl.count === 0} onClick={() => setView('timelapse')}>
+            ▶ {t('tl.play')}
+          </button>
+          <button disabled={tl.count === 0} onClick={exportTimelapse}>
+            💾 {t('tl.export')}
+          </button>
         </div>
         <div class="menu-col" style={{ width: '100%' }}>
           <button class="primary" onClick={onClose}>

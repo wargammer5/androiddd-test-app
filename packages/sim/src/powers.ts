@@ -499,7 +499,7 @@ definePower({
     const r = sim.beliefs.newReligion(city, sim.creatures.unitName(Math.max(0, sim.creatures.e.index(sim.kingdomSys.get(city.kingdom)?.ruler ?? -1))) || '?', city.religion);
     city.religion = r.id;
     sim.emit({ kind: 'religion', text: 'ev.religionFounded', args: { city: city.name, religion: r.name, deity: r.deity, founder: r.founder }, important: true });
-    sim.world.markAllDirty();
+    sim.markZonesDirty();
   },
 });
 
@@ -516,7 +516,7 @@ definePower({
     const cu = sim.beliefs.newCulture(city.race, city.id, city.culture);
     city.culture = cu.id;
     sim.emit({ kind: 'cultureSplit', text: 'ev.cultureNew', args: { city: city.name, culture: cu.name }, important: true });
-    sim.world.markAllDirty();
+    sim.markZonesDirty();
   },
 });
 

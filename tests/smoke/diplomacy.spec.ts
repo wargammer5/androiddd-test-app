@@ -1,3 +1,4 @@
+import { openWindow } from './helpers.ts';
 import { test, expect } from '@playwright/test';
 
 test('diplomacy window opens with all tabs', async ({ page }) => {
@@ -9,7 +10,7 @@ test('diplomacy window opens with all tabs', async ({ page }) => {
   await page.getByTestId('size-small').click();
   await page.getByTestId('btn-create').click();
   await expect(page.getByTestId('hud-stats')).toBeVisible({ timeout: 60000 });
-  await page.getByTestId('btn-diplomacy').click();
+  await openWindow(page, 'diplomacy');
   const panel = page.getByTestId('diplomacy-panel');
   await expect(panel).toBeVisible();
   for (const b of await panel.locator('.row button').all()) await b.click();

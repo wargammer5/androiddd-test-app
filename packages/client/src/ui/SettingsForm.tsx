@@ -2,6 +2,7 @@ import { t } from '../i18n.ts';
 import { useStore } from '../store.ts';
 import { settings, patchSettings, type Quality, type Settings } from '../settings.ts';
 import { currentSession } from './GameScreen.tsx';
+import { platform } from '../platform/index.ts';
 
 export function SettingsForm(_p: { inGame?: boolean }) {
   const s = useStore(settings);
@@ -46,6 +47,27 @@ export function SettingsForm(_p: { inGame?: boolean }) {
             {t('eco.' + k)}
           </button>
         ))}
+      </div>
+      {(['clouds', 'bloom', 'vibration', 'batterySaver'] as const).map((k) => (
+        <div class="row" key={k}>
+          <label>{t('settings.' + k)}</label>
+          <button class={s[k] ? 'on' : ''} onClick={() => patchSettings({ [k]: !s[k] } as Partial<Settings>)} data-testid={'set-' + k}>
+            {s[k] ? t('common.on') : t('common.off')}
+          </button>
+        </div>
+      ))}
+      <div class="row">
+        <label>{t('settings.autosave')}</label>
+        {[1, 3, 5, 10].map((m) => (
+          <button key={m} class={s.autosaveMin === m ? 'on' : ''} onClick={() => patchSettings({ autosaveMin: m })} style={{ minWidth: '44px' }}>
+            {m}
+          </button>
+        ))}
+        <span class="small muted">{t('settings.minutes')}</span>
+      </div>
+      <div class="row">
+        <label>{t('settings.fullscreen')}</label>
+        <button onClick={() => void platform.setFullscreen(!platform.isFullscreen())}>⛶</button>
       </div>
       <div class="row">
         <label>{t('settings.uiScale')}</label>

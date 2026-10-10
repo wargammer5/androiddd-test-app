@@ -6,6 +6,7 @@ import { buildAtlas } from './assets/atlas.ts';
 import { Store } from './store.ts';
 import { settings } from './settings.ts';
 import { platform } from './platform/index.ts';
+import { Timelapse } from './timelapse.ts';
 
 export interface ToolState {
   power: string | null;
@@ -194,6 +195,7 @@ export class GameSession {
   }
 
   detach(): void {
+    this.timelapse.stop();
     cancelAnimationFrame(this.raf);
     this.input?.dispose();
     this.input = null;
@@ -204,6 +206,12 @@ export class GameSession {
   dispose(): void {
     this.detach();
     this.worker.terminate();
+  }
+
+  readonly timelapse = new Timelapse(() => this.canvas);
+
+  get canvasEl(): HTMLCanvasElement | null {
+    return this.canvas;
   }
 
   readonly measure = new Store<{ a: [number, number] | null; b: [number, number] | null }>({ a: null, b: null });
