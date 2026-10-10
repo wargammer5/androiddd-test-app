@@ -12,6 +12,7 @@ export interface Settings {
   sfxVol: number;
   ambientVol: number;
   soundOn: boolean;
+  musicMode: 'tracks' | 'generative';
   bloom: boolean;
   clouds: boolean;
   vibration: boolean;
@@ -33,6 +34,7 @@ function defaults(): Settings {
     sfxVol: 0.7,
     ambientVol: 0.5,
     soundOn: true,
+    musicMode: 'tracks',
     bloom: true,
     clouds: true,
     vibration: true,

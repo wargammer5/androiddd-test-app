@@ -9,7 +9,7 @@ import { SettingsScreen } from './SettingsScreen.tsx';
 import { GameScreen } from './GameScreen.tsx';
 import { ErrorBoundary } from './ErrorBoundary.tsx';
 import type { NewWorldParams } from '@sotv/sim';
-import { audio } from '../audio/engine.ts';
+import { audio, type SoundName } from '../audio/engine.ts';
 
 const unlock = () => {
   audio.unlock();
@@ -20,7 +20,15 @@ window.addEventListener('keydown', unlock, { capture: true });
 window.addEventListener(
   'click',
   (e) => {
-    if ((e.target as HTMLElement)?.closest?.('button')) audio.play('click', { volume: 0.35, rate: 1, throttleMs: 30 });
+    const b = (e.target as HTMLElement)?.closest?.('button');
+    if (!b) return;
+    const label = (b.textContent ?? '').trim();
+    if (b.dataset.sfx) audio.play(b.dataset.sfx as SoundName, { volume: 0.45, throttleMs: 30 });
+    else if (b.closest('.menu-col')) audio.play('ui_select', { volume: 0.45, throttleMs: 30 });
+    else if (b.dataset.testid === 'btn-create') audio.play('ui_confirm', { volume: 0.5, throttleMs: 30 });
+    else if (label === '✕') audio.play('ui_close', { volume: 0.4, throttleMs: 30 });
+    else if (b.closest('.settings, .row')) audio.play('ui_toggle', { volume: 0.4, throttleMs: 30 });
+    else audio.play('click', { volume: 0.35, throttleMs: 30 });
   },
   { capture: true },
 );

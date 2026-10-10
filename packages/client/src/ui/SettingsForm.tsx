@@ -61,6 +61,14 @@ export function SettingsForm(_p: { inGame?: boolean }) {
           <span class="small">{Math.round(s[k] * 100)}%</span>
         </div>
       ))}
+      <div class="row">
+        <label>{t('settings.musicMode')}</label>
+        {(['tracks', 'generative'] as const).map((m) => (
+          <button key={m} class={s.musicMode === m ? 'on' : ''} onClick={() => patchSettings({ musicMode: m })} data-testid={'set-music-' + m}>
+            {t('settings.music.' + m)}
+          </button>
+        ))}
+      </div>
       {(['clouds', 'bloom', 'vibration', 'batterySaver'] as const).map((k) => (
         <div class="row" key={k}>
           <label>{t('settings.' + k)}</label>

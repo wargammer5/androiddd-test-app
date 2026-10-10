@@ -599,5 +599,8 @@
   "crash.none": "Сбоев не было",
   "crash.count": "Отчётов о сбоях: {n}",
   "crash.export": "Экспорт",
-  "crash.clear": "Очистить"
+  "crash.clear": "Очистить",
+  "settings.musicMode": "Тип музыки",
+  "settings.music.tracks": "Треки",
+  "settings.music.generative": "Генеративная"
 }

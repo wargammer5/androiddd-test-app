@@ -599,5 +599,8 @@
   "crash.none": "No crashes recorded",
   "crash.count": "Crash reports: {n}",
   "crash.export": "Export",
-  "crash.clear": "Clear"
+  "crash.clear": "Clear",
+  "settings.musicMode": "Music style",
+  "settings.music.tracks": "Tracks",
+  "settings.music.generative": "Generative"
 }

@@ -8,7 +8,8 @@ const skipWeb = args.includes('--skip-web');
 const release = args.includes('--release');
 const aab = args.includes('--aab');
 const v = version();
-const versionCode = v.stage * 100 + Number(v.version.split('.').pop() || 0) + 1;
+const [major, minor, patch] = v.version.split('.').map(Number);
+const versionCode = v.stage * 100 + (major >= 1 ? minor * 10 : 0) + (patch || 0) + 1;
 
 const missing = ['aapt2', 'javac', 'zipalign', 'apksigner', 'dalvik-exchange', 'zip', 'keytool'].filter((b) => !which(b));
 if (missing.length || !existsSync(ANDROID_JAR)) {

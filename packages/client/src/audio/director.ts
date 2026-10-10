@@ -1,13 +1,18 @@
 import type { GameSession } from '../game.ts';
 import type { SimEvent } from '@sotv/sim';
 import { audio } from './engine.ts';
-import type { SfxName } from './synth.ts';
+import type { SoundName } from './engine.ts';
 import { isNightPhase } from './time.ts';
 
-const EVENT_SFX: Record<string, SfxName> = {
-  war: 'horn',
+const EVENT_SFX: Record<string, SoundName> = {
+  war: 'jingle_bad',
+  kingdom: 'jingle_good',
+  rebellion: 'horn',
+  betrayal: 'horn',
+  cityRuined: 'quake',
+  flood: 'splash',
   capture: 'horn',
-  peace: 'bell',
+  peace: 'jingle_good',
   alliance: 'bell',
   city: 'bell',
   colonyFounded: 'bell',
@@ -23,7 +28,7 @@ const EVENT_SFX: Record<string, SfxName> = {
   invasion: 'growl',
   plague: 'growl',
   wildfire: 'fire',
-  era: 'chime',
+  era: 'jingle_era',
   tech: 'coin',
   gift: 'coin',
   hero: 'chime',
@@ -31,7 +36,7 @@ const EVENT_SFX: Record<string, SfxName> = {
   crab: 'growl',
 };
 
-const POWER_SFX: Record<string, SfxName> = {
+const POWER_SFX: Record<string, SoundName> = {
   lava: 'fire',
   fire: 'fire',
   water: 'splash',
@@ -94,13 +99,14 @@ export class SoundDirector {
     if (['earthquake', 'volcano', 'comet', 'plague', 'famine', 'drought', 'wildfire'].includes(e.kind)) this.disasterUntil = now + 40000;
     const name = EVENT_SFX[e.kind];
     if (!name) return;
+    if (name.startsWith('jingle') && !e.important) return;
     this.spatial(name, e.x, e.y, e.important ? 1 : 0.6);
   }
 
-  spatial(name: SfxName, x?: number, y?: number, vol = 1): void {
+  spatial(name: SoundName, x?: number, y?: number, vol = 1): void {
     const cam = this.session.cam;
     if (x === undefined || y === undefined) {
-      audio.play(name, { volume: vol * 0.7 });
+      audio.play(name, { volume: vol * 0.7, throttleMs: name.startsWith('jingle') ? 4000 : undefined });
       return;
     }
     const v = cam.visible();
@@ -110,7 +116,7 @@ export class SoundDirector {
     const dy = y - (v.y0 + v.y1) / 2;
     const dist = Math.hypot(dx, dy) / half;
     const att = Math.max(0.12, 1 / (1 + dist * dist));
-    audio.play(name, { volume: vol * att, pan: dx / half });
+    audio.play(name, { volume: vol * att, pan: dx / half, throttleMs: name.startsWith('jingle') ? 4000 : undefined });
   }
 
   onPower(power: string, x: number, y: number): void {
