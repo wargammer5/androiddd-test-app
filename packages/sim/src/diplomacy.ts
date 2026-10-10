@@ -196,7 +196,7 @@ export class Diplomacy implements System {
     if (r.opinion < -35 && dist < 30) {
       const pa = a.army + a.pop * 0.1;
       const pb = b.army + b.pop * 0.1;
-      const agg = 0.04 + sim.rulerMod(a, 'war') * 0.04 + sim.laws.eventFrequency * 0.01;
+      const agg = (0.04 + sim.rulerMod(a, 'war') * 0.04 + sim.laws.eventFrequency * 0.01) * sim.events.mod('war');
       const cause = this.holyCause(a, b) ? 'religion' : dist < 8 ? 'border' : 'conquest';
       if (pa > pb * 0.9 && this.rng.chance(agg)) this.declare(a, b, cause);
       else if (pb > pa * 0.9 && this.rng.chance(agg)) this.declare(b, a, cause);

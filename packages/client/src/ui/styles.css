@@ -553,3 +553,10 @@ a.link {
   border: 1px solid rgba(0, 0, 0, 0.5);
   flex: none;
 }
+.measure {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(120px * var(--ui) + var(--safe-t));
+  z-index: 6;
+}

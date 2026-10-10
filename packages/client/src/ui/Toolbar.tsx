@@ -16,7 +16,7 @@ const TABS: { id: PowerDef['tab']; icon: string }[] = [
 export function Toolbar({ session, onConfirm }: { session: GameSession; onConfirm: (p: PowerDef, go: () => void) => void }) {
   const tool = useStore(session.tool);
   const [tab, setTab] = useState<PowerDef['tab']>('world');
-  const powers = [...POWERS.values()].filter((p) => p.tab === tab);
+  const powers = [...POWERS.values()].filter((p) => p.tab === tab && p.icon);
   const tabs = TABS.filter((tb) => [...POWERS.values()].some((p) => p.tab === tb.id));
   const current = tool.power ? POWERS.get(tool.power) : undefined;
   const select = (p: PowerDef) => {
@@ -79,5 +79,6 @@ export function Toolbar({ session, onConfirm }: { session: GameSession; onConfir
 
 export function argKey(power: string, a: string): string {
   if (power === 'biome') return 'biome.' + a;
+  if (power === 'world_age') return 'age.' + a;
   return `arg.${power}.${a}`;
 }

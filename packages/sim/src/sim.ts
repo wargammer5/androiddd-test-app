@@ -14,6 +14,7 @@ import { CitySystem, type City } from './cities.ts';
 import { KingdomSystem, type Kingdom } from './kingdoms.ts';
 import { Diplomacy } from './diplomacy.ts';
 import { Beliefs } from './beliefs.ts';
+import { WorldEvents } from './events.ts';
 import { traits as TRAITS } from '@sotv/content';
 import { buildings as BUILDINGS, economy as ECONOMY } from '@sotv/content';
 const ECON_RES = ECONOMY.resources;
@@ -45,7 +46,7 @@ export class Simulation {
   readonly undo = new UndoStack();
   readonly systems: System[] = [];
   private queue: Command[] = [];
-  private events: SimEvent[] = [];
+  private eventQueue: SimEvent[] = [];
   private minimapTick = -1000;
   lut: Uint8Array = baseLut();
   substances!: Substances;
@@ -55,7 +56,9 @@ export class Simulation {
   kingdomSys!: KingdomSystem;
   diplomacy!: Diplomacy;
   beliefs!: Beliefs;
+  events!: WorldEvents;
   layerMode = 0;
+  controlled = -1;
   startPeoples = true;
 
   constructor(params: NewWorldParams, skipGen = false) {
@@ -107,8 +110,9 @@ export class Simulation {
     this.kingdomSys = this.makeKingdoms();
     this.diplomacy = new Diplomacy(this);
     this.beliefs = new Beliefs(this);
+    this.events = new WorldEvents(this);
     this.creatures.civ = this.cities;
-    this.systems.push(this.substances, this.nature, this.cities, this.kingdomSys, this.diplomacy, this.beliefs, this.creatures);
+    this.systems.push(this.substances, this.nature, this.cities, this.kingdomSys, this.diplomacy, this.beliefs, this.events, this.creatures);
   }
 
   protected makeKingdoms(): KingdomSystem {
@@ -124,6 +128,21 @@ export class Simulation {
     this.diplomacy.newClans(members, this.kingdomSys.get(c.kingdom));
     this.beliefs.onCityFounded(c);
     if (this.layerMode === 2 || this.layerMode === 3) this.setLayer(this.layerMode);
+  }
+
+  raidTarget(x: number, y: number, r: number): number {
+    let best = -1;
+    let bd = r * r;
+    const w = this.world;
+    for (const c of this.cities.cities) {
+      if (!c.alive) continue;
+      const d = ((c.center % w.w) - x) ** 2 + (Math.floor(c.center / w.w) - y) ** 2;
+      if (d < bd) {
+        bd = d;
+        best = c.center;
+      }
+    }
+    return best;
   }
 
   setLayer(mode: number): void {
@@ -146,6 +165,7 @@ export class Simulation {
 
   onUnitKilled(i: number, killer: number): void {
     this.diplomacy.onDeath(i, killer);
+    this.events.onUnitKilled(i, killer);
   }
 
   relationBonus(a: Kingdom, b: Kingdom): number {
@@ -271,13 +291,13 @@ export class Simulation {
   }
 
   emit(e: Omit<SimEvent, 'tick'>): void {
-    this.events.push({ ...e, tick: this.tick });
-    if (this.events.length > 400) this.events.splice(0, this.events.length - 400);
+    this.eventQueue.push({ ...e, tick: this.tick });
+    if (this.eventQueue.length > 400) this.eventQueue.splice(0, this.eventQueue.length - 400);
   }
 
   drainEvents(): SimEvent[] {
-    const e = this.events;
-    this.events = [];
+    const e = this.eventQueue;
+    this.eventQueue = [];
     return e;
   }
 
@@ -286,6 +306,7 @@ export class Simulation {
     this.queue = [];
     for (const c of q) this.apply(c);
     for (const s of this.systems) s.step(this);
+    if (this.events.pendingUndead.length) this.events.flushUndead();
     this.tick++;
   }
 
@@ -327,6 +348,12 @@ export class Simulation {
       if (i >= 0) e.flags[i] = c.on ? e.flags[i]! | EFlag.Favorite : e.flags[i]! & ~EFlag.Favorite;
     } else if (c.t === 'debug' && c.key === 'follow') {
       this.creatures.followId = c.value ?? -1;
+    } else if (c.t === 'control') {
+      const i = e.index(this.controlled);
+      if (i >= 0) {
+        e.taskTarget[i] = Math.floor(c.y) * this.world.w + Math.floor(c.x);
+        e.task[i] = 21;
+      }
     } else if (c.t === 'edit') {
       this.beliefs.edit(c.kind, c.id, c.data);
     } else if (c.t === 'spawn') {
@@ -444,7 +471,8 @@ export class Simulation {
       cities,
       kingdoms,
       tickMs,
-      worldAge: 'calm',
+      worldAge: this.events.age,
+      light: this.events.mod('light'),
       weather: this.weatherNear(),
       clouds: this.nature.clouds.flatMap((c) => [Math.round(c.x * 10) / 10, Math.round(c.y * 10) / 10, Math.round(c.r), c.type]),
       flash: this.nature.flash,
@@ -482,6 +510,8 @@ export class Simulation {
         return { kingdoms: this.kingdomSys.list(), cities: this.cities.cities.filter((c) => c.alive).map((c) => ({ id: c.id, name: c.name, pop: c.pop, kingdom: c.kingdom, race: SPECIES[c.race]!.key })), ...this.listsExtra() };
       case 'diplomacy':
         return this.diplomacy.info();
+      case 'history':
+        return this.events.info();
       case 'culture':
         return this.beliefs.info('culture', q.id);
       case 'religion':
@@ -579,9 +609,14 @@ export class Simulation {
     return sw.finish();
   }
 
-  protected saveExtra(_w: SaveWriter): void {}
+  protected saveExtra(w: SaveWriter): void {
+    w.json('SIMX', { controlled: this.controlled });
+  }
 
-  protected loadExtra(_r: SaveReader): void {}
+  protected loadExtra(r: SaveReader): void {
+    const m = r.jsonOr<{ controlled: number } | null>('SIMX', null);
+    if (m) this.controlled = m.controlled;
+  }
 
   static load(bytes: Uint8Array): Simulation {
     const r = new SaveReader(bytes);
@@ -637,6 +672,7 @@ export class Simulation {
     }
     mix(this.tick);
     mix(this.extraHash());
+    mix(this.events.hash());
     return h >>> 0;
   }
 

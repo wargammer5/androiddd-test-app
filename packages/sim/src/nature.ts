@@ -81,6 +81,10 @@ export class Nature implements System {
     return w.heat[i]! + off;
   }
 
+  ageTemp(): number {
+    return this.attachedSim ? this.attachedSim.events.mod('temp') : 0;
+  }
+
   rainAt(w: World, i: number): boolean {
     if (this.clouds.length === 0) return false;
     const x = i % w.w;
@@ -97,7 +101,7 @@ export class Nature implements System {
   step(sim: Simulation): void {
     const w = sim.world;
     const tick = sim.tick;
-    const off = this.seasonOffset(tick);
+    const off = this.seasonOffset(tick) + this.ageTemp();
     const season = calendar(tick).season;
     if (tick % 3 === 0) this.weather(sim, season, off);
     if (this.flash > 0) this.flash--;
@@ -195,7 +199,7 @@ export class Nature implements System {
       }
       return;
     }
-    const rain = this.rainAt(w, i) ? 1.6 : 1;
+    const rain = (this.rainAt(w, i) ? 1.6 : 1) * sim.events.mod('growth') * (sim.events.regions.length && sim.events.inRegion('drought', i % w.w, Math.floor(i / w.w)) ? 0.1 : 1);
     if (r.float() < 0.1 * p.growth * f * seasonGrow * rain) {
       let ns = st;
       let age = w.objData[i]!;

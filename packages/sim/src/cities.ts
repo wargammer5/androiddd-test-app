@@ -525,7 +525,9 @@ export class CitySystem implements System, CivHooks {
     if (season === Season.Winter) return;
     for (const c of this.cities) {
       if (!c.alive) continue;
-      const mult = c.techs.includes('agriculture') ? 1.4 : 1;
+      const fam = this.sim.events.famine.get(c.id);
+      if (fam !== undefined && fam > this.sim.tick) continue;
+      const mult = (c.techs.includes('agriculture') ? 1.4 : 1) * this.sim.events.mod('growth');
       for (const f of c.fields) {
         const o = w.obj[f]!;
         if ((o === Obj.FieldSprout || o === Obj.FieldGrowing) && this.rng.chance(0.06 * mult * (this.sim.weatherRain(f) ? 1.5 : 1))) {

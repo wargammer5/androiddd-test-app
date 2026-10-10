@@ -519,3 +519,304 @@ definePower({
     sim.world.markAllDirty();
   },
 });
+
+import { AGES, type AgeKey } from './events.ts';
+import { EFlag as PFlag, Task as PTask } from './entities.ts';
+import { TRAIT_INDEX as PTRAIT } from './creatures.ts';
+
+function once(c: PowerCmd, min = 2.5): boolean {
+  const last = lastSpawn.get(c.stroke);
+  if (last && Math.hypot(last[0] - c.x, last[1] - c.y) < min) return false;
+  lastSpawn.set(c.stroke, [c.x, c.y]);
+  return true;
+}
+
+function unitsIn(sim: Simulation, c: PowerCmd, fn: (i: number) => void): void {
+  const cr = sim.creatures;
+  cr.grid.rebuild(cr.e);
+  const r = Math.max(1, c.radius);
+  cr.grid.query(c.x, c.y, r + 1, (j) => {
+    if (!cr.e.alive[j]) return;
+    const dx = cr.e.x[j]! - c.x;
+    const dy = cr.e.y[j]! - c.y;
+    if (c.shape === 'square' ? Math.max(Math.abs(dx), Math.abs(dy)) <= r : dx * dx + dy * dy <= r * r) fn(j);
+  });
+}
+
+for (const [key, icon] of [
+  ['dragon', '🐉'],
+  ['demon', '👹'],
+  ['undead', '💀'],
+  ['mutant', '🧟'],
+  ['alien', '👽'],
+] as const)
+  defineSpawn(key, 'creatures', icon, key === 'dragon', key === 'undead' ? 3 : 1);
+
+definePower({
+  id: 'titancrab',
+  tab: 'creatures',
+  icon: '🦀',
+  brush: false,
+  apply(sim, c) {
+    if (!once(c, 0.5)) return;
+    const e = sim.creatures.e;
+    const cur = e.index(sim.controlled);
+    if (cur >= 0) {
+      e.taskTarget[cur] = Math.floor(c.y) * sim.world.w + Math.floor(c.x);
+      e.task[cur] = PTask.Controlled;
+      return;
+    }
+    const ids = sim.creatures.spawnGroup(SPECIES_BY_KEY.get('titancrab')!, c.x, c.y, 1);
+    const i = ids[0];
+    if (i === undefined) return;
+    e.flags[i] = e.flags[i]! | PFlag.Controlled;
+    e.task[i] = PTask.Controlled;
+    e.taskTarget[i] = -1;
+    sim.controlled = e.id(i);
+    sim.creatures.followId = e.id(i);
+    sim.emit({ kind: 'crab', text: 'ev.titancrab', args: {}, x: c.x, y: c.y, important: true });
+  },
+});
+
+definePower({
+  id: 'heal',
+  tab: 'creatures',
+  icon: '💚',
+  brush: true,
+  apply(sim, c) {
+    const e = sim.creatures.e;
+    unitsIn(sim, c, (i) => {
+      e.hp[i] = e.maxHp[i]!;
+      e.hunger[i] = 0;
+      e.fatigue[i] = 0;
+    });
+  },
+});
+
+definePower({
+  id: 'bless',
+  tab: 'civ',
+  icon: '✨',
+  brush: true,
+  apply(sim, c) {
+    if (!once(c)) return;
+    const e = sim.creatures.e;
+    const t = PTRAIT.get('blessed')!;
+    unitsIn(sim, c, (i) => {
+      const o = i * 5;
+      if (sim.creatures.def(i).kind === 'monster' || e.hasTrait(i, t)) return;
+      for (let k = 0; k < 5; k++)
+        if (e.traits[o + k] === 255 || e.traits[o + k] === PTRAIT.get('cursed')) {
+          e.traits[o + k] = t;
+          break;
+        }
+      sim.creatures.applyStats(i);
+      e.hp[i] = e.maxHp[i]!;
+    });
+    const city = cityAt(sim, c.x, c.y);
+    if (city) city.happiness = Math.min(1, city.happiness + 0.3);
+  },
+});
+
+definePower({
+  id: 'curse',
+  tab: 'civ',
+  icon: '🕸',
+  brush: true,
+  apply(sim, c) {
+    if (!once(c)) return;
+    const e = sim.creatures.e;
+    const t = PTRAIT.get('cursed')!;
+    unitsIn(sim, c, (i) => {
+      const o = i * 5;
+      if (e.hasTrait(i, t)) return;
+      for (let k = 0; k < 5; k++)
+        if (e.traits[o + k] === 255 || e.traits[o + k] === PTRAIT.get('blessed')) {
+          e.traits[o + k] = t;
+          break;
+        }
+      sim.creatures.applyStats(i);
+    });
+  },
+});
+
+definePower({
+  id: 'gift',
+  tab: 'civ',
+  icon: '🎁',
+  brush: false,
+  apply(sim, c) {
+    if (!once(c)) return;
+    const city = cityAt(sim, c.x, c.y);
+    if (!city) return;
+    for (const r of ['food', 'wood', 'stone', 'iron', 'gold']) city.store.add(r, 40, 'divine gift');
+    sim.emit({ kind: 'gift', text: 'ev.gift', args: { city: city.name } });
+  },
+});
+
+definePower({
+  id: 'discord',
+  tab: 'civ',
+  icon: '😡',
+  brush: false,
+  apply(sim, c) {
+    if (!once(c)) return;
+    const city = cityAt(sim, c.x, c.y);
+    if (!city) return;
+    const k = sim.kingdomSys.get(city.kingdom);
+    if (!k) return;
+    let best: typeof k | null = null;
+    let bd = 1e9;
+    const w = sim.world;
+    for (const o of sim.kingdomSys.kingdoms) {
+      if (!o.alive || o.id === k.id || sim.diplomacy.atWar(k.id, o.id)) continue;
+      const oc = sim.cities.city(o.capital);
+      if (!oc) continue;
+      const d = Math.hypot((oc.center % w.w) - (city.center % w.w), Math.floor(oc.center / w.w) - Math.floor(city.center / w.w));
+      if (d < bd) {
+        bd = d;
+        best = o;
+      }
+    }
+    if (best) {
+      sim.diplomacy.rel(k.id, best.id).truce = 0;
+      sim.diplomacy.declare(k, best, 'plot');
+    }
+  },
+});
+
+definePower({
+  id: 'peace',
+  tab: 'civ',
+  icon: '🕊',
+  brush: false,
+  apply(sim, c) {
+    if (!once(c)) return;
+    const city = cityAt(sim, c.x, c.y);
+    if (!city) return;
+    for (const w of sim.diplomacy.activeWars()) if (w.attackers.includes(city.kingdom) || w.defenders.includes(city.kingdom)) sim.diplomacy.endWar(w, 'draw');
+  },
+});
+
+definePower({
+  id: 'rebel',
+  tab: 'civ',
+  icon: '✊',
+  brush: false,
+  apply(sim, c) {
+    if (!once(c)) return;
+    const city = cityAt(sim, c.x, c.y);
+    if (!city) return;
+    const k = sim.kingdomSys.get(city.kingdom);
+    if (k && k.cities.length > 1) sim.kingdomSys.rebel(city, k);
+  },
+});
+
+function eventPower(id: string, tab: PowerDef['tab'], icon: string, danger = false): void {
+  definePower({
+    id,
+    tab,
+    icon,
+    brush: false,
+    danger,
+    apply(sim, c) {
+      if (!once(c, 4)) return;
+      sim.undo.begin(c.stroke, c.power);
+      const w = sim.world;
+      forBrush(w, c.x, c.y, 22, 'circle', (i) => sim.undo.record(w, i));
+      sim.events.trigger(id, c.x, c.y);
+    },
+  });
+}
+eventPower('drought', 'nature', '🏜');
+eventPower('flood', 'nature', '🌊');
+eventPower('plague', 'nature', '🦠', true);
+eventPower('famine', 'nature', '🥀');
+eventPower('earthquake', 'destruction', '🌐', true);
+eventPower('volcano', 'destruction', '🗻', true);
+eventPower('comet', 'destruction', '☄', true);
+eventPower('invasion', 'creatures', '👾', true);
+
+function blast(id: string, icon: string, r: number, danger: boolean): void {
+  definePower({
+    id,
+    tab: 'destruction',
+    icon,
+    brush: false,
+    danger,
+    apply(sim, c) {
+      if (!once(c, r)) return;
+      sim.undo.begin(c.stroke, c.power);
+      const w = sim.world;
+      forBrush(w, c.x, c.y, r + 4, 'circle', (i) => sim.undo.record(w, i));
+      sim.events.impact(Math.floor(c.x), Math.floor(c.y), r, false);
+      if (id === 'nuke') {
+        forBrush(w, c.x, c.y, r * 1.6, 'circle', (i, _x, _y, f) => {
+          if (f < 0.4 && w.mat[i] === Mat.None && ((i * 2654435761) >>> 0) % 5 === 0) {
+            w.mat[i] = Mat.Acid;
+            w.depth[i] = 1;
+            w.wake(i, 40);
+          }
+        });
+        sim.nature.flash = 10;
+      }
+    },
+  });
+}
+blast('bomb', '💣', 3, false);
+blast('nuke', '☢', 16, true);
+
+definePower({
+  id: 'smite',
+  tab: 'destruction',
+  icon: '🗡',
+  brush: true,
+  apply(sim, c) {
+    unitsIn(sim, c, (i) => sim.creatures.die(i, -1, 'smite'));
+  },
+});
+
+definePower({
+  id: 'magnet',
+  tab: 'other',
+  icon: '🧲',
+  brush: true,
+  apply(sim, c) {
+    if (sim.events.magnet.length === 0 || !lastSpawn.has(c.stroke)) {
+      lastSpawn.set(c.stroke, [c.x, c.y]);
+      sim.events.magnetDrop();
+      sim.events.magnetPick(c.x, c.y, Math.max(1, c.radius));
+    } else sim.events.magnetMove(c.x, c.y);
+  },
+});
+
+definePower({
+  id: 'magnet_drop',
+  tab: 'other',
+  icon: '',
+  brush: false,
+  apply(sim) {
+    sim.events.magnetDrop();
+  },
+});
+
+definePower({
+  id: 'measure',
+  tab: 'other',
+  icon: '📏',
+  brush: false,
+  apply() {},
+});
+
+definePower({
+  id: 'world_age',
+  tab: 'other',
+  icon: '🌗',
+  brush: false,
+  args: AGES as unknown as string[],
+  apply(sim, c) {
+    if (!once(c, 1000)) return;
+    const a = (typeof c.arg === 'string' && (AGES as readonly string[]).includes(c.arg) ? c.arg : 'calm') as AgeKey;
+    sim.events.setAge(a);
+  },
+});

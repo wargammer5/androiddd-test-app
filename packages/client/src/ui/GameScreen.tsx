@@ -18,11 +18,14 @@ import { Layers } from './Layers.tsx';
 import { KingdomList } from './KingdomList.tsx';
 import { DiplomacyPanel } from './DiplomacyPanel.tsx';
 import { BeliefsPanel } from './BeliefsPanel.tsx';
+import { LawsPanel } from './LawsPanel.tsx';
+import { MeasureOverlay } from './MeasureOverlay.tsx';
 import { registerPanel } from './panels.ts';
 
 registerPanel('kingdoms', KingdomList);
 registerPanel('diplomacy', DiplomacyPanel);
 registerPanel('beliefs', BeliefsPanel);
+registerPanel('laws', LawsPanel);
 
 export let currentSession: GameSession | null = null;
 
@@ -139,6 +142,9 @@ export function GameScreen({ params, load, exit }: { params?: NewWorldParams; lo
             <button onClick={() => setPanel((p) => (p === 'beliefs' ? null : 'beliefs'))} data-testid="btn-beliefs" aria-label="beliefs">
               🎭
             </button>
+            <button onClick={() => setPanel((p) => (p === 'laws' ? null : 'laws'))} data-testid="btn-laws" aria-label="laws">
+              📜
+            </button>
             <Layers session={session} available={[0, 1, 2, 3, 4, 5]} />
             <button onClick={() => setMini((v) => !v)} aria-label="minimap">
               🗺
@@ -146,6 +152,7 @@ export function GameScreen({ params, load, exit }: { params?: NewWorldParams; lo
           </div>
           {mini && <Minimap session={session} />}
           {!Panel && <Inspector session={session} />}
+          <MeasureOverlay session={session} />
           <Toolbar session={session} onConfirm={askConfirm} />
           {Panel && <Panel session={session} onClose={() => setPanel(null)} />}
         </>

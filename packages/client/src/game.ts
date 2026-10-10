@@ -172,7 +172,9 @@ export class GameSession {
     this.input = new Input(canvas, this.cam, {
       hasTool: () => this.tool.get().power !== null,
       onApply: (wx, wy, stroke, first) => this.applyTool(wx, wy, stroke, first),
-      onStrokeEnd: () => undefined,
+      onStrokeEnd: () => {
+        if (this.tool.get().power === 'magnet') this.cmd({ t: 'power', power: 'magnet_drop', x: 0, y: 0, radius: 0, shape: 'circle', stroke: 0 });
+      },
       onInspect: (wx, wy) => this.inspect.set({ x: Math.floor(wx), y: Math.floor(wy), at: performance.now() }),
       onLongPress: (wx, wy) => {
         if (settings.get().vibration) platform.vibrate(20);
@@ -204,9 +206,19 @@ export class GameSession {
     this.worker.terminate();
   }
 
-  applyTool(wx: number, wy: number, stroke: number, _first: boolean): void {
+  readonly measure = new Store<{ a: [number, number] | null; b: [number, number] | null }>({ a: null, b: null });
+
+  applyTool(wx: number, wy: number, stroke: number, first: boolean): void {
     const t = this.tool.get();
     if (!t.power) return;
+    if (t.power === 'measure') {
+      if (!first) return;
+      const m = this.measure.get();
+      if (!m.a || m.b) this.measure.set({ a: [wx, wy], b: null });
+      else this.measure.set({ a: m.a, b: [wx, wy] });
+      return;
+    }
+    if (t.power === 'titancrab') this.followCam = true;
     this.cmd({ t: 'power', power: t.power, x: wx, y: wy, radius: t.size, shape: t.shape, stroke, arg: t.arg });
   }
 
@@ -273,7 +285,7 @@ export class GameSession {
     const hv = this.hover.get();
     const brush: [number, number, number, number] = t.power && hv ? [hv[0], hv[1], t.size, t.shape === 'square' ? 1 : 0] : [0, 0, 0, 0];
     const dayPhase = s?.dayPhase ?? 0.5;
-    const day = dayLight(dayPhase);
+    const day = dayLight(dayPhase) * (s?.light ?? 1);
     r.draw(this.cam, {
       time: (now - this.startTime) / 1000,
       day,
