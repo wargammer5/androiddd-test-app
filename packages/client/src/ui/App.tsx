@@ -8,6 +8,23 @@ import { About } from './About.tsx';
 import { SettingsScreen } from './SettingsScreen.tsx';
 import { GameScreen } from './GameScreen.tsx';
 import type { NewWorldParams } from '@sotv/sim';
+import { audio } from '../audio/engine.ts';
+
+const unlock = () => {
+  audio.unlock();
+  audio.setMood('menu');
+};
+window.addEventListener('pointerdown', unlock, { capture: true });
+window.addEventListener('keydown', unlock, { capture: true });
+window.addEventListener(
+  'click',
+  (e) => {
+    if ((e.target as HTMLElement)?.closest?.('button')) audio.play('click', { volume: 0.35, rate: 1, throttleMs: 30 });
+  },
+  { capture: true },
+);
+platform.onPause(() => audio.suspend());
+platform.onResume(() => audio.resume());
 
 export type Screen =
   | { id: 'menu' }

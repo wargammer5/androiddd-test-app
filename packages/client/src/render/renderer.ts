@@ -186,13 +186,32 @@ void main(){
   }
   if (uOverlay == 5) col = mix(col * 0.4, lut(7, biome).rgb, 0.85);
 
+  float emit = 0.0;
+  if (mat == 2 && depth > 0.0) emit = 0.85;
+  if (fire > 0) emit = max(emit, 0.35 + float(fire) / 20.0);
   float light = uDay;
   if (uOverlay != 4 && light < 0.999) {
     vec3 night = col * vec3(0.32, 0.38, 0.6);
-    float glow = 0.0;
-    if (mat == 2) glow = 1.0;
-    if (fire > 0) glow = max(glow, float(fire) / 8.0);
-    col = mix(night, col, max(light, glow));
+    float glow = emit;
+    if (uQuality > 0) {
+      int n = uQuality > 1 ? 12 : 6;
+      for (int k = 0; k < 12; k++) {
+        if (k >= n) break;
+        float a = float(k) * 2.39996;
+        float r = 1.5 + float(k % 3) * 1.6;
+        ivec2 sc = c + ivec2(round(cos(a) * r), round(sin(a) * r));
+        ivec4 sa = fetch0(sc);
+        ivec4 sb = fetch1(sc);
+        float e = 0.0;
+        if (sa.b == 2 && sa.a > 0) e = 1.0;
+        if ((sb.g >> 4) > 0) e = max(e, 0.6 + float(sb.g >> 4) / 30.0);
+        if (sb.r >= 80 && sb.r < 128) e = max(e, 0.35);
+        glow = max(glow, e * (1.0 - r / 6.5));
+      }
+    }
+    if (obj >= 80 && obj < 128 && detailed && hash(vec2(c) + floor(uTime * 0.05)) > 0.4 && f.y > 0.45 && f.y < 0.7 && abs(f.x - 0.5) < 0.18) glow = max(glow, 0.9);
+    col = mix(night, col, max(light, glow * 0.85));
+    col += vec3(1.0, 0.55, 0.2) * glow * (1.0 - light) * 0.22;
   }
 
   if (uCloud > 0.0 && uQuality > 0) {
@@ -230,7 +249,7 @@ void main(){
     if (abs(dist - r) < edgeW) col = mix(col, vec3(1.0), 0.7);
   }
 
-  outColor = vec4(col, 1.0);
+  outColor = vec4(col, emit);
 }`;
 
 const ENT_VS = `#version 300 es
@@ -301,7 +320,80 @@ void main(){
   if ((vFlags & 2u) != 0u) c.rgb = mix(c.rgb, vec3(1.0, 0.2, 0.2), 0.5);
   if ((vFlags & 4u) != 0u && vUv.y < 0.2) c.rgb = vec3(1.0, 0.85, 0.2);
   c.rgb *= mix(0.45, 1.0, uDay);
-  outColor = vec4(c.rgb, 1.0);
+  outColor = vec4(c.rgb, 0.0);
+}`;
+
+const POST_VS = `#version 300 es
+in vec2 aPos;
+out vec2 vUv;
+void main(){ vUv = aPos * 0.5 + 0.5; gl_Position = vec4(aPos, 0.0, 1.0); }`;
+
+const BRIGHT_FS = `#version 300 es
+precision highp float;
+uniform sampler2D uTex;
+uniform vec2 uTexel;
+in vec2 vUv;
+out vec4 o;
+void main(){
+  vec4 acc = vec4(0.0);
+  for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+    vec4 s = texture(uTex, vUv + vec2(float(x), float(y)) * uTexel);
+    acc += vec4(s.rgb * s.a, s.a);
+  }
+  o = vec4(acc.rgb / 9.0 * 1.6, 1.0);
+}`;
+
+const BLUR_FS = `#version 300 es
+precision highp float;
+uniform sampler2D uTex;
+uniform vec2 uDir;
+in vec2 vUv;
+out vec4 o;
+void main(){
+  float w[5] = float[](0.227, 0.194, 0.121, 0.054, 0.016);
+  vec3 c = texture(uTex, vUv).rgb * w[0];
+  for (int i = 1; i < 5; i++) {
+    c += texture(uTex, vUv + uDir * float(i)).rgb * w[i];
+    c += texture(uTex, vUv - uDir * float(i)).rgb * w[i];
+  }
+  o = vec4(c, 1.0);
+}`;
+
+const COMP_FS = `#version 300 es
+precision highp float;
+uniform sampler2D uScene;
+uniform sampler2D uBloom;
+uniform float uStrength;
+in vec2 vUv;
+out vec4 o;
+void main(){
+  vec3 c = texture(uScene, vUv).rgb + texture(uBloom, vUv).rgb * uStrength;
+  o = vec4(c, 1.0);
+}`;
+
+const PART_VS = `#version 300 es
+precision highp float;
+in vec4 aP;
+in vec4 aC;
+uniform vec2 uCam;
+uniform float uZoom;
+uniform vec2 uView;
+out vec4 vC;
+void main(){
+  vec2 sp = (aP.xy - uCam) * uZoom + uView * 0.5;
+  gl_Position = vec4(sp.x / uView.x * 2.0 - 1.0, 1.0 - sp.y / uView.y * 2.0, 0.0, 1.0);
+  gl_PointSize = max(1.5, aP.z * uZoom);
+  vC = aC;
+}`;
+
+const PART_FS = `#version 300 es
+precision highp float;
+in vec4 vC;
+out vec4 o;
+void main(){
+  vec2 d = gl_PointCoord - 0.5;
+  if (dot(d, d) > 0.25) discard;
+  o = vec4(vC.rgb, vC.a);
 }`;
 
 export interface RenderParams {
@@ -315,6 +407,7 @@ export interface RenderParams {
   seasonTint: number;
   cloudList: number[];
   flash: number;
+  bloom: boolean;
 }
 
 export class Renderer {
@@ -334,6 +427,14 @@ export class Renderer {
   private worldW = 1;
   private worldH = 1;
   private entCount = 0;
+  private postProg: Record<string, WebGLProgram> = {};
+  private postU: Record<string, Record<string, WebGLUniformLocation>> = {};
+  private fbo: { scene: [WebGLFramebuffer, WebGLTexture]; a: [WebGLFramebuffer, WebGLTexture]; b: [WebGLFramebuffer, WebGLTexture]; w: number; h: number } | null = null;
+  private partProg: WebGLProgram;
+  private partU: Record<string, WebGLUniformLocation>;
+  private partVao: WebGLVertexArrayObject;
+  private partBuf: WebGLBuffer;
+  private partCount = 0;
 
   constructor(readonly canvas: HTMLCanvasElement, atlasPixels: Uint8Array) {
     const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
@@ -375,6 +476,27 @@ export class Renderer {
     gl.vertexAttribDivisor(lm, 1);
     gl.bindVertexArray(null);
 
+    for (const [k, fs] of [
+      ['bright', BRIGHT_FS],
+      ['blur', BLUR_FS],
+      ['comp', COMP_FS],
+    ] as const) {
+      this.postProg[k] = compile(gl, POST_VS, fs);
+      this.postU[k] = uniforms(gl, this.postProg[k]!);
+    }
+    this.partProg = compile(gl, PART_VS, PART_FS);
+    this.partU = uniforms(gl, this.partProg);
+    this.partVao = gl.createVertexArray()!;
+    gl.bindVertexArray(this.partVao);
+    this.partBuf = gl.createBuffer()!;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.partBuf);
+    const pp = gl.getAttribLocation(this.partProg, 'aP');
+    const pc = gl.getAttribLocation(this.partProg, 'aC');
+    gl.enableVertexAttribArray(pp);
+    gl.vertexAttribPointer(pp, 4, gl.FLOAT, false, 32, 0);
+    gl.enableVertexAttribArray(pc);
+    gl.vertexAttribPointer(pc, 4, gl.FLOAT, false, 32, 16);
+    gl.bindVertexArray(null);
     this.lut = texture(gl, 256, 8, new Uint8Array(256 * 8 * 4));
     this.atlas = texture(gl, ATLAS_SIZE, ATLAS_SIZE, atlasPixels);
   }
@@ -430,6 +552,51 @@ export class Renderer {
     gl.bufferData(gl.ARRAY_BUFFER, meta.subarray(0, count * META_STRIDE), gl.DYNAMIC_DRAW);
   }
 
+  setParticles(data: Float32Array, count: number): void {
+    const gl = this.gl;
+    this.partCount = count;
+    if (!count) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.partBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, data.subarray(0, count * 8), gl.DYNAMIC_DRAW);
+  }
+
+  private target(w: number, h: number, linear: boolean): [WebGLFramebuffer, WebGLTexture] {
+    const gl = this.gl;
+    const t = texture(gl, w, h, null, linear);
+    const f = gl.createFramebuffer()!;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return [f, t];
+  }
+
+  private ensureFbo(w: number, h: number): NonNullable<Renderer['fbo']> {
+    const gl = this.gl;
+    if (this.fbo && this.fbo.w === w && this.fbo.h === h) return this.fbo;
+    if (this.fbo) {
+      for (const [f, t] of [this.fbo.scene, this.fbo.a, this.fbo.b]) {
+        gl.deleteFramebuffer(f);
+        gl.deleteTexture(t);
+      }
+    }
+    const qw = Math.max(1, w >> 2);
+    const qh = Math.max(1, h >> 2);
+    this.fbo = { scene: this.target(w, h, true), a: this.target(qw, qh, true), b: this.target(qw, qh, true), w, h };
+    return this.fbo;
+  }
+
+  private post(name: string, tex: WebGLTexture, set: (u: Record<string, WebGLUniformLocation>) => void): void {
+    const gl = this.gl;
+    gl.useProgram(this.postProg[name]!);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    const u = this.postU[name]!;
+    gl.uniform1i(u.uTex ?? u.uScene!, 0);
+    set(u);
+    gl.bindVertexArray(this.quad);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
   resize(w: number, h: number): void {
     if (this.canvas.width !== w || this.canvas.height !== h) {
       this.canvas.width = w;
@@ -439,6 +606,11 @@ export class Renderer {
 
   draw(cam: Camera, p: RenderParams): void {
     const gl = this.gl;
+    const W = this.canvas.width;
+    const H = this.canvas.height;
+    const bloom = p.bloom && !!this.t0;
+    const f = bloom ? this.ensureFbo(W, H) : null;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, f ? f.scene[0] : null);
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     gl.clearColor(0.04, 0.05, 0.08, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -492,6 +664,41 @@ export class Renderer {
       gl.uniform1i(e.uDots!, cam.zoom < 3 ? 1 : 0);
       gl.bindVertexArray(this.entVao);
       gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.entCount);
+    }
+    if (this.partCount > 0) {
+      gl.enable(gl.BLEND);
+      gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE);
+      gl.useProgram(this.partProg);
+      gl.uniform2f(this.partU.uCam!, cam.x, cam.y);
+      gl.uniform1f(this.partU.uZoom!, cam.zoom);
+      gl.uniform2f(this.partU.uView!, cam.viewW, cam.viewH);
+      gl.bindVertexArray(this.partVao);
+      gl.drawArrays(gl.POINTS, 0, this.partCount);
+      gl.disable(gl.BLEND);
+    }
+    if (f) {
+      const qw = Math.max(1, W >> 2);
+      const qh = Math.max(1, H >> 2);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, f.a[0]);
+      gl.viewport(0, 0, qw, qh);
+      this.post('bright', f.scene[1], (u) => gl.uniform2f(u.uTexel!, 1 / W, 1 / H));
+      gl.bindFramebuffer(gl.FRAMEBUFFER, f.b[0]);
+      this.post('blur', f.a[1], (u) => gl.uniform2f(u.uDir!, 1.5 / qw, 0));
+      gl.bindFramebuffer(gl.FRAMEBUFFER, f.a[0]);
+      this.post('blur', f.b[1], (u) => gl.uniform2f(u.uDir!, 0, 1.5 / qh));
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, W, H);
+      gl.useProgram(this.postProg.comp!);
+      const u = this.postU.comp!;
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, f.scene[1]);
+      gl.uniform1i(u.uScene!, 0);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, f.a[1]);
+      gl.uniform1i(u.uBloom!, 1);
+      gl.uniform1f(u.uStrength!, 1.1);
+      gl.bindVertexArray(this.quad);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
     gl.bindVertexArray(null);
   }

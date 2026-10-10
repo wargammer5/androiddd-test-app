@@ -169,7 +169,7 @@ export class CitySystem implements System, CivHooks {
     }
     this.recount(c);
     this.sim.onCityFounded(c, kingdom);
-    this.sim.emit({ kind: 'city', text: 'ev.cityFounded', args: { city: c.name, race: SPECIES[race]!.key }, x: center % w.w, y: Math.floor(center / w.w), important: true });
+    this.sim.emit({ kind: 'city', text: 'ev.cityFounded', args: { city: c.name, race: 'species.' + SPECIES[race]!.key }, x: center % w.w, y: Math.floor(center / w.w), important: true });
     return c;
   }
 

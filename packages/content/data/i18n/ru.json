@@ -589,5 +589,9 @@
   "settings.batterySaver": "Экономия батареи",
   "settings.autosave": "Автосохранение",
   "settings.minutes": "мин",
-  "settings.fullscreen": "Полный экран"
+  "settings.fullscreen": "Полный экран",
+  "settings.sound": "Звук",
+  "settings.musicVol": "Музыка",
+  "settings.sfxVol": "Эффекты",
+  "settings.ambientVol": "Окружение"
 }

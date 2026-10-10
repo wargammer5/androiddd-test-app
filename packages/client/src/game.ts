@@ -7,6 +7,7 @@ import { Store } from './store.ts';
 import { settings } from './settings.ts';
 import { platform } from './platform/index.ts';
 import { Timelapse } from './timelapse.ts';
+import { Particles, BURSTS, POWER_BURST, EVENT_BURST } from './render/particles.ts';
 
 export interface ToolState {
   power: string | null;
@@ -138,7 +139,13 @@ export class GameSession {
         }
         this.send({ t: 'ret', buf: m.buf, meta: m.meta }, [m.buf, m.meta]);
         this.stats.set(m.stats);
-        if (m.events.length) this.events.update((l) => [...l, ...m.events].slice(-300));
+        if (m.events.length) {
+          this.events.update((l) => [...l, ...m.events].slice(-300));
+          for (const ev of m.events) {
+            const fx = EVENT_BURST[ev.kind];
+            if (fx && ev.x !== undefined && ev.y !== undefined) this.fx(fx, ev.x, ev.y);
+          }
+        }
         if (m.minimap) this.minimapData = m.minimap;
         this.lastFollow = m.follow ?? null;
         this.follow.set(m.follow ?? null);
@@ -209,6 +216,15 @@ export class GameSession {
   }
 
   readonly timelapse = new Timelapse(() => this.canvas);
+  readonly particles = new Particles();
+
+  fx(kind: string, x: number, y: number): void {
+    const b = BURSTS[kind];
+    if (!b || this.qualityLevel() === 0) return;
+    for (const burst of b(x, y)) this.particles.burst(burst);
+  }
+  onPowerUsed: ((power: string, x: number, y: number) => void) | null = null;
+  private lastPowerSound = 0;
 
   get canvasEl(): HTMLCanvasElement | null {
     return this.canvas;
@@ -227,6 +243,13 @@ export class GameSession {
       return;
     }
     if (t.power === 'titancrab') this.followCam = true;
+    const now = performance.now();
+    if (first || now - this.lastPowerSound > 220) {
+      this.lastPowerSound = now;
+      this.onPowerUsed?.(t.power, wx, wy);
+      const fx = POWER_BURST[t.power];
+      if (fx) this.fx(fx, wx, wy);
+    }
     this.cmd({ t: 'power', power: t.power, x: wx, y: wy, radius: t.size, shape: t.shape, stroke, arg: t.arg });
   }
 
@@ -294,6 +317,8 @@ export class GameSession {
     const brush: [number, number, number, number] = t.power && hv ? [hv[0], hv[1], t.size, t.shape === 'square' ? 1 : 0] : [0, 0, 0, 0];
     const dayPhase = s?.dayPhase ?? 0.5;
     const day = dayLight(dayPhase) * (s?.light ?? 1);
+    this.particles.update(dt);
+    r.setParticles(this.particles.data, this.particles.count);
     r.draw(this.cam, {
       time: (now - this.startTime) / 1000,
       day,
@@ -305,6 +330,7 @@ export class GameSession {
       seasonTint: s ? seasonTint(s.season) : 0,
       cloudList: s?.clouds ?? [],
       flash: s?.flash ?? 0,
+      bloom: st.bloom && q > 0,
     });
   }
 

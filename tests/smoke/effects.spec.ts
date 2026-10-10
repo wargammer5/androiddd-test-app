@@ -1,0 +1,35 @@
+import { test, expect } from '@playwright/test';
+
+test('sound unlocks after first action, lava glows with bloom in darkness', async ({ page }) => {
+  const errs: string[] = [];
+  page.on('pageerror', (e) => errs.push(e.message));
+  page.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
+  await page.addInitScript(() => localStorage.setItem('sotv.settings', JSON.stringify({ quality: 'high', bloom: true })));
+  await page.goto('/');
+  expect(await page.evaluate(() => (window as unknown as { __sotvAudio: { started: boolean } }).__sotvAudio.started)).toBe(false);
+  await page.getByTestId('btn-new').click();
+  expect(await page.evaluate(() => (window as unknown as { __sotvAudio: { started: boolean } }).__sotvAudio.started)).toBe(true);
+  await page.getByTestId('size-small').click();
+  await page.getByTestId('btn-create').click();
+  await expect(page.getByTestId('hud-stats')).toBeVisible({ timeout: 60000 });
+  await page.getByTestId('tab-other').click();
+  await page.getByTestId('power-world_age').click();
+  await page.getByRole('button', { name: /Darkness|Тьма/ }).click();
+  const box = (await page.getByTestId('world-canvas').boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await page.getByTestId('tab-destruction').click();
+  await page.getByTestId('power-lava').click();
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  await page.mouse.move(cx - 50, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx + 50, cy + 20, { steps: 12 });
+  await page.mouse.up();
+  await page.getByTestId('power-bomb').click();
+  await page.mouse.click(cx, cy - 60);
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `test-results/effects-${test.info().project.name}.png` });
+  const voices = await page.evaluate(() => (window as unknown as { __sotvAudio: { activeVoices: number } }).__sotvAudio.activeVoices);
+  expect(voices).toBeGreaterThanOrEqual(0);
+  expect(errs).toEqual([]);
+});

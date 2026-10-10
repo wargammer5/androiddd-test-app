@@ -589,5 +589,9 @@
   "settings.batterySaver": "Battery saver",
   "settings.autosave": "Autosave",
   "settings.minutes": "min",
-  "settings.fullscreen": "Fullscreen"
+  "settings.fullscreen": "Fullscreen",
+  "settings.sound": "Sound",
+  "settings.musicVol": "Music",
+  "settings.sfxVol": "Effects",
+  "settings.ambientVol": "Ambience"
 }

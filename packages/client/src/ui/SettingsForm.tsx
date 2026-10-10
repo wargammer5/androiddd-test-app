@@ -48,6 +48,19 @@ export function SettingsForm(_p: { inGame?: boolean }) {
           </button>
         ))}
       </div>
+      <div class="row">
+        <label>{t('settings.sound')}</label>
+        <button class={s.soundOn ? 'on' : ''} onClick={() => patchSettings({ soundOn: !s.soundOn })} data-testid="set-sound">
+          {s.soundOn ? t('common.on') : t('common.off')}
+        </button>
+      </div>
+      {(['musicVol', 'sfxVol', 'ambientVol'] as const).map((k) => (
+        <div class="row" key={k}>
+          <label>{t('settings.' + k)}</label>
+          <input class="grow" type="range" min={0} max={1} step={0.05} value={s[k]} onInput={(e) => patchSettings({ [k]: Number((e.target as HTMLInputElement).value) } as Partial<Settings>)} />
+          <span class="small">{Math.round(s[k] * 100)}%</span>
+        </div>
+      ))}
       {(['clouds', 'bloom', 'vibration', 'batterySaver'] as const).map((k) => (
         <div class="row" key={k}>
           <label>{t('settings.' + k)}</label>

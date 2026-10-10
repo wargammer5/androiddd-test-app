@@ -24,6 +24,7 @@ import { WindowsMenu } from './WindowsMenu.tsx';
 import { StatsPanel } from './StatsPanel.tsx';
 import { ChroniclePanel } from './ChroniclePanel.tsx';
 import { EventFeed } from './EventFeed.tsx';
+import { SoundDirector } from '../audio/director.ts';
 import { registerPanel } from './panels.ts';
 
 registerPanel('kingdoms', KingdomList);
@@ -53,7 +54,13 @@ export function GameScreen({ params, load, exit }: { params?: NewWorldParams; lo
     session.attach(canvasRef.current!);
     if (load) session.load(load);
     else if (params) session.newWorld(params);
+    const director = new SoundDirector(session);
+    session.onPowerUsed = (p, x, y) => {
+      director.onPower(p, x, y);
+      if (settings.get().vibration && ['nuke', 'bomb', 'earthquake', 'comet', 'lightning', 'volcano'].includes(p)) platform.vibrate(40);
+    };
     return () => {
+      director.dispose();
       session.dispose();
       currentSession = null;
     };
